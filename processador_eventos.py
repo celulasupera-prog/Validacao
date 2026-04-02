@@ -146,6 +146,67 @@ class ProcessadorEventosPeriodicos:
 
         return df.apply(status_linha, axis=1)
 
+    def _normalizar_texto(self, valor) -> str:
+        if pd.isna(valor):
+            return ""
+        return re.sub(r"\s+", " ", str(valor).strip().upper())
+
+    def marcar_afastados(self, df_afastados: pd.DataFrame):
+        """
+        Marca registros como Afastado com base em lista externa.
+        A lista deve conter, no mínimo:
+          - nome da empresa
+          - código do empregado
+          - nome do empregado
+        """
+        if self.dados_consolidados.empty or df_afastados.empty:
+            return
+
+        mapa_colunas = {re.sub(r"\s+", "", c.lower()): c for c in df_afastados.columns}
+
+        col_empresa = (
+            mapa_colunas.get("empresa")
+            or mapa_colunas.get("nomeempresa")
+            or mapa_colunas.get("razaosocial")
+        )
+        col_codigo = (
+            mapa_colunas.get("codigofuncionario")
+            or mapa_colunas.get("codigoempregado")
+            or mapa_colunas.get("codigocolaborador")
+            or mapa_colunas.get("codigo")
+            or mapa_colunas.get("matricula")
+        )
+        col_nome = (
+            mapa_colunas.get("funcionario")
+            or mapa_colunas.get("nomefuncionario")
+            or mapa_colunas.get("nomeempregado")
+            or mapa_colunas.get("nome")
+            or mapa_colunas.get("colaborador")
+        )
+
+        if not (col_empresa and col_codigo and col_nome):
+            return
+
+        afastados = df_afastados[[col_empresa, col_codigo, col_nome]].copy()
+        afastados.columns = ["empresa", "codigo", "nome"]
+        afastados["empresa_key"] = afastados["empresa"].apply(self._normalizar_texto)
+        afastados["codigo_key"] = afastados["codigo"].astype(str).str.strip()
+        afastados["nome_key"] = afastados["nome"].apply(self._normalizar_texto)
+
+        base = self.dados_consolidados.copy()
+        base["empresa_key"] = base["Empresa"].apply(self._normalizar_texto)
+        base["codigo_key"] = base["Código Empregado"].astype(str).str.strip()
+        base["nome_key"] = base["Nome"].apply(self._normalizar_texto)
+
+        chaves_afastados = set(
+            afastados.apply(lambda r: (r["empresa_key"], r["codigo_key"], r["nome_key"]), axis=1).tolist()
+        )
+
+        mascara = base.apply(
+            lambda r: (r["empresa_key"], r["codigo_key"], r["nome_key"]) in chaves_afastados, axis=1
+        )
+        self.dados_consolidados.loc[mascara, "Status"] = "Afastado"
+
     def processar_bloco(self, inicio: int, fim: int, empresa: str, cnpj: str) -> pd.DataFrame:
         assert self.dados_raw is not None
 
@@ -223,7 +284,10 @@ class ProcessadorEventosPeriodicos:
                 "total_registros": 0,
                 "total_validados": 0,
                 "total_invalidados": 0,
+                "total_afastados": 0,
                 "percentual_validados": 0,
+                "percentual_invalidados": 0,
+                "percentual_afastados": 0,
                 "total_empresas": 0,
                 "total_funcionarios": 0,
                 "competencias": [],
@@ -235,8 +299,15 @@ class ProcessadorEventosPeriodicos:
             "total_registros": len(df),
             "total_validados": int((df["Status"] == "Validado").sum()),
             "total_invalidados": int((df["Status"] == "Invalidado").sum()),
+            "total_afastados": int((df["Status"] == "Afastado").sum()),
             "percentual_validados": round(
                 (df["Status"] == "Validado").sum() / len(df) * 100, 2
+            ),
+            "percentual_invalidados": round(
+                (df["Status"] == "Invalidado").sum() / len(df) * 100, 2
+            ),
+            "percentual_afastados": round(
+                (df["Status"] == "Afastado").sum() / len(df) * 100, 2
             ),
             "total_empresas": df["Empresa"].nunique(),
             "total_funcionarios": df["CPF"].nunique(),
@@ -253,6 +324,7 @@ class ProcessadorEventosPeriodicos:
                     "total": len(df_emp),
                     "validados": int((df_emp["Status"] == "Validado").sum()),
                     "invalidados": int((df_emp["Status"] == "Invalidado").sum()),
+                    "afastados": int((df_emp["Status"] == "Afastado").sum()),
                     "percentual": round(
                         (df_emp["Status"] == "Validado").sum() / len(df_emp) * 100,
                         2,
@@ -292,6 +364,11 @@ class ProcessadorEventosPeriodicos:
                             start_color="FFC7CE", end_color="FFC7CE", fill_type="solid"
                         )
                         cell.font = Font(color="9C0006", bold=True)
+                    elif value == "Afastado":
+                        cell.fill = PatternFill(
+                            start_color="FFEB9C", end_color="FFEB9C", fill_type="solid"
+                        )
+                        cell.font = Font(color="9C6500", bold=True)
                     cell.alignment = Alignment(horizontal="center")
 
                 cell.border = Border(
@@ -344,9 +421,17 @@ class ProcessadorEventosPeriodicos:
         linha += 1
         ws_stats[f"A{linha}"] = "Invalidados:"
         ws_stats[f"B{linha}"] = stats["total_invalidados"]
-        ws_stats[f"C{linha}"] = f"{100 - stats['percentual_validados']}%"
+        ws_stats[f"C{linha}"] = f"{stats['percentual_invalidados']}%"
         ws_stats[f"B{linha}"].fill = PatternFill(
             start_color="FFC7CE", end_color="FFC7CE", fill_type="solid"
+        )
+
+        linha += 1
+        ws_stats[f"A{linha}"] = "Afastados:"
+        ws_stats[f"B{linha}"] = stats["total_afastados"]
+        ws_stats[f"C{linha}"] = f"{stats['percentual_afastados']}%"
+        ws_stats[f"B{linha}"].fill = PatternFill(
+            start_color="FFEB9C", end_color="FFEB9C", fill_type="solid"
         )
 
         linha += 2
@@ -371,6 +456,7 @@ class ProcessadorEventosPeriodicos:
             "Total",
             "Validados",
             "Invalidados",
+            "Afastados",
             "% Validados",
         ]
         for col, titulo in enumerate(cabecalho, 1):
@@ -388,7 +474,8 @@ class ProcessadorEventosPeriodicos:
             ws_stats[f"C{linha}"] = emp["total"]
             ws_stats[f"D{linha}"] = emp["validados"]
             ws_stats[f"E{linha}"] = emp["invalidados"]
-            ws_stats[f"F{linha}"] = f"{emp['percentual']}%"
+            ws_stats[f"F{linha}"] = emp["afastados"]
+            ws_stats[f"G{linha}"] = f"{emp['percentual']}%"
 
         ws_stats.column_dimensions["A"].width = 40
         ws_stats.column_dimensions["B"].width = 20
@@ -396,5 +483,6 @@ class ProcessadorEventosPeriodicos:
         ws_stats.column_dimensions["D"].width = 12
         ws_stats.column_dimensions["E"].width = 12
         ws_stats.column_dimensions["F"].width = 15
+        ws_stats.column_dimensions["G"].width = 15
 
         wb.save(destino_saida)

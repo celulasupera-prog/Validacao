@@ -1,6 +1,7 @@
 # Consolidador de Eventos Periódicos (eSocial)
 
 Aplicação em Streamlit para upload de planilha `.xlsx`, tratamento dos blocos de empresas e download do consolidado em Excel.
+Opcionalmente, você pode enviar também uma lista de afastados para marcar o status como **Afastado**.
 
 ## Executar localmente
 
@@ -23,6 +24,17 @@ A plataforma instala automaticamente as dependências de `requirements.txt`.
 ## Fluxo de uso
 
 1. Faça upload da planilha de entrada.
-2. Clique em **Processar planilha**.
-3. Visualize dados consolidados e métricas.
-4. Baixe o arquivo Excel final.
+2. (Opcional) Faça upload da lista de afastados **ou cole os dados direto no campo de texto (Ctrl+C / Ctrl+V)**.
+3. Clique em **Processar planilha**.
+4. Visualize dados consolidados e métricas.
+5. Baixe o arquivo Excel final.
+
+## Formato da lista de afastados (opcional)
+
+Aceita arquivo `.xlsx`, `.csv` ou `.tsv`, ou texto colado com colunas equivalentes a:
+- Empresa
+- Código Empregado (ou Código Funcionário/Matrícula)
+- Nome (ou Nome Funcionário)
+
+Exemplo de texto colado:
+`133<TAB>IGREJA ASSEMBLEIA<TAB>1<TAB>MARIA PASTORINA DE OLIVEIRA`

@@ -1,6 +1,9 @@
 import io
+import re
+from io import StringIO
 from datetime import datetime
 
+import pandas as pd
 import streamlit as st
 
 from processador_eventos import ProcessadorEventosPeriodicos
@@ -11,6 +14,57 @@ st.title("📊 Consolidador de Relatório de Status dos Eventos Periódicos")
 st.caption("Faça upload da planilha .xlsx, processe os dados e baixe o consolidado.")
 
 uploaded_file = st.file_uploader("Selecione a planilha de entrada", type=["xlsx"])
+arquivo_afastados = st.file_uploader(
+    "Lista de afastados (opcional: xlsx/csv/tsv)",
+    type=["xlsx", "csv", "tsv", "txt"],
+)
+texto_afastados = st.text_area(
+    "Ou cole os afastados aqui (Ctrl+C / Ctrl+V) - opcional",
+    help="Cole linhas no formato: código empresa, nome empresa, código funcionário, nome funcionário.",
+    height=140,
+)
+
+
+def carregar_lista_afastados(uploaded, texto):
+    frames = []
+
+    if uploaded is not None:
+        nome = uploaded.name.lower()
+        if nome.endswith(".xlsx"):
+            frames.append(pd.read_excel(uploaded))
+        elif nome.endswith(".csv"):
+            frames.append(pd.read_csv(uploaded))
+        else:
+            frames.append(pd.read_csv(uploaded, sep="\t"))
+
+    if texto and texto.strip():
+        linhas = [l for l in texto.splitlines() if l.strip()]
+        if linhas:
+            if "\t" in linhas[0]:
+                df_texto = pd.read_csv(StringIO("\n".join(linhas)), sep="\t", header=None)
+            elif ";" in linhas[0]:
+                df_texto = pd.read_csv(StringIO("\n".join(linhas)), sep=";", header=None)
+            elif "," in linhas[0]:
+                df_texto = pd.read_csv(StringIO("\n".join(linhas)), sep=",", header=None)
+            else:
+                dados = [re.split(r"\s{2,}", l.strip()) for l in linhas]
+                df_texto = pd.DataFrame(dados)
+
+            if df_texto.shape[1] >= 4:
+                df_texto = df_texto.iloc[:, :4]
+                df_texto.columns = [
+                    "codigo_empresa",
+                    "empresa",
+                    "codigo_funcionario",
+                    "nome_funcionario",
+                ]
+            elif df_texto.shape[1] == 3:
+                df_texto.columns = ["empresa", "codigo_funcionario", "nome_funcionario"]
+            frames.append(df_texto)
+
+    if not frames:
+        return None
+    return pd.concat(frames, ignore_index=True)
 
 if uploaded_file:
     st.success(f"Arquivo carregado: {uploaded_file.name}")
@@ -19,6 +73,10 @@ if uploaded_file:
         with st.spinner("Processando dados..."):
             processador = ProcessadorEventosPeriodicos(uploaded_file)
             processador.processar()
+
+            df_afastados = carregar_lista_afastados(arquivo_afastados, texto_afastados)
+            if df_afastados is not None:
+                processador.marcar_afastados(df_afastados)
 
             if processador.dados_consolidados.empty:
                 st.warning("Nenhum dado foi identificado para consolidação.")
