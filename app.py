@@ -40,15 +40,28 @@ def carregar_lista_afastados(uploaded, texto):
     if texto and texto.strip():
         linhas = [l for l in texto.splitlines() if l.strip()]
         if linhas:
-            if "\t" in linhas[0]:
-                df_texto = pd.read_csv(StringIO("\n".join(linhas)), sep="\t", header=None)
-            elif ";" in linhas[0]:
-                df_texto = pd.read_csv(StringIO("\n".join(linhas)), sep=";", header=None)
-            elif "," in linhas[0]:
-                df_texto = pd.read_csv(StringIO("\n".join(linhas)), sep=",", header=None)
-            else:
-                dados = [re.split(r"\s{2,}", l.strip()) for l in linhas]
-                df_texto = pd.DataFrame(dados)
+            registros = []
+            for linha in linhas:
+                linha = linha.strip()
+                if not linha:
+                    continue
+
+                if "\t" in linha:
+                    partes = [p.strip() for p in linha.split("\t")]
+                elif ";" in linha:
+                    partes = [p.strip() for p in linha.split(";")]
+                elif "," in linha:
+                    partes = [p.strip() for p in linha.split(",")]
+                else:
+                    # Exemplo aceito: 133 IGREJA ASSEMBLEIA 1 MARIA PASTORINA
+                    match = re.match(r"^\s*(\d+)\s+(.+?)\s+(\d+)\s+(.+)\s*$", linha)
+                    partes = list(match.groups()) if match else re.split(r"\s{2,}", linha)
+
+                partes = [p for p in partes if str(p).strip()]
+                if len(partes) >= 4:
+                    registros.append(partes[:4])
+
+            df_texto = pd.DataFrame(registros)
 
             if df_texto.shape[1] >= 4:
                 df_texto = df_texto.iloc[:, :4]
