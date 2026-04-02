@@ -1,17 +1,30 @@
 # Consolidador de Eventos Periódicos (eSocial)
 
-App em Streamlit para anexar uma planilha `.xlsx`, consolidar os blocos de empresas e baixar um relatório tratado em Excel.
+Você tem duas formas de usar:
 
-## Como executar
+## 1) Modo mais simples (local com Streamlit)
 
 ```bash
-pip install -r requirements.txt
-streamlit run app.py
+python -m pip install -r requirements.txt
+python -m streamlit run app.py
 ```
 
-## Fluxo
+Depois acesse o endereço mostrado no terminal (normalmente `http://localhost:8501`).
 
-1. Faça upload da planilha de entrada no app.
-2. Clique em **Processar planilha**.
-3. Visualize os dados consolidados e indicadores.
-4. Baixe o arquivo final em Excel.
+## 2) Deploy na Vercel (FastAPI)
+
+Este repositório inclui uma API em `api/index.py` preparada para Vercel com upload de `.xlsx` e retorno do arquivo consolidado.
+
+### Passos
+
+1. Suba este repositório no GitHub.
+2. Na Vercel, crie um novo projeto apontando para esse repositório.
+3. A Vercel vai usar o `vercel.json` automaticamente.
+4. Após deploy, abra a URL do projeto e envie o arquivo.
+
+## Fluxo de processamento
+
+1. Faça upload da planilha de entrada.
+2. O sistema identifica blocos de empresas.
+3. Consolida os dados e calcula estatísticas.
+4. Retorna arquivo Excel final para download.

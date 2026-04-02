@@ -2,3 +2,6 @@ pandas
 numpy
 openpyxl
 streamlit
+fastapi
+uvicorn
+python-multipart
