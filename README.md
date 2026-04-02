@@ -24,14 +24,14 @@ A plataforma instala automaticamente as dependências de `requirements.txt`.
 ## Fluxo de uso
 
 1. Faça upload da planilha de entrada.
-2. (Opcional) Faça upload da lista de afastados **ou cole os dados direto no campo de texto (Ctrl+C / Ctrl+V)**.
+2. (Opcional) Cole os dados de afastados direto no campo de texto (Ctrl+C / Ctrl+V).
 3. Clique em **Processar planilha**.
 4. Visualize dados consolidados e métricas.
 5. Baixe o arquivo Excel final.
 
 ## Formato da lista de afastados (opcional)
 
-Aceita arquivo `.xlsx`, `.csv` ou `.tsv`, ou texto colado com colunas equivalentes a:
+Aceita texto colado com colunas equivalentes a:
 - Empresa
 - Código Empregado (ou Código Funcionário/Matrícula)
 - Nome (ou Nome Funcionário)

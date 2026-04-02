@@ -1,6 +1,5 @@
 import io
 import re
-from io import StringIO
 from datetime import datetime
 
 import pandas as pd
@@ -14,10 +13,6 @@ st.title("📊 Consolidador de Relatório de Status dos Eventos Periódicos")
 st.caption("Faça upload da planilha .xlsx, processe os dados e baixe o consolidado.")
 
 uploaded_file = st.file_uploader("Selecione a planilha de entrada", type=["xlsx"])
-arquivo_afastados = st.file_uploader(
-    "Lista de afastados (opcional: xlsx/csv/tsv)",
-    type=["xlsx", "csv", "tsv", "txt"],
-)
 texto_afastados = st.text_area(
     "Ou cole os afastados aqui (Ctrl+C / Ctrl+V) - opcional",
     help="Cole linhas no formato: código empresa, nome empresa, código funcionário, nome funcionário.",
@@ -25,18 +20,7 @@ texto_afastados = st.text_area(
 )
 
 
-def carregar_lista_afastados(uploaded, texto):
-    frames = []
-
-    if uploaded is not None:
-        nome = uploaded.name.lower()
-        if nome.endswith(".xlsx"):
-            frames.append(pd.read_excel(uploaded))
-        elif nome.endswith(".csv"):
-            frames.append(pd.read_csv(uploaded))
-        else:
-            frames.append(pd.read_csv(uploaded, sep="\t"))
-
+def carregar_lista_afastados(texto):
     if texto and texto.strip():
         linhas = [l for l in texto.splitlines() if l.strip()]
         if linhas:
@@ -73,21 +57,27 @@ def carregar_lista_afastados(uploaded, texto):
                 ]
             elif df_texto.shape[1] == 3:
                 df_texto.columns = ["empresa", "codigo_funcionario", "nome_funcionario"]
-            frames.append(df_texto)
-
-    if not frames:
-        return None
-    return pd.concat(frames, ignore_index=True)
+            return df_texto
+    return None
 
 if uploaded_file:
     st.success(f"Arquivo carregado: {uploaded_file.name}")
+    df_preview_afastados = carregar_lista_afastados(texto_afastados)
+
+    st.subheader("Prévia dos afastados colados")
+    if df_preview_afastados is not None and not df_preview_afastados.empty:
+        st.dataframe(df_preview_afastados, use_container_width=True)
+    elif texto_afastados and texto_afastados.strip():
+        st.warning("Não foi possível interpretar os afastados. Verifique o formato das linhas coladas.")
+    else:
+        st.info("Cole os dados de afastados para visualizar a prévia antes do processamento.")
 
     if st.button("Processar planilha", type="primary"):
         with st.spinner("Processando dados..."):
             processador = ProcessadorEventosPeriodicos(uploaded_file)
             processador.processar()
 
-            df_afastados = carregar_lista_afastados(arquivo_afastados, texto_afastados)
+            df_afastados = carregar_lista_afastados(texto_afastados)
             if df_afastados is not None:
                 processador.marcar_afastados(df_afastados)
 
