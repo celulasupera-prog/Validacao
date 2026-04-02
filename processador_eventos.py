@@ -95,6 +95,57 @@ class ProcessadorEventosPeriodicos:
                 return idx
         return None
 
+    def _competencia_para_ordem(self, competencia: Optional[str]) -> Tuple[int, int]:
+        if not competencia:
+            return (0, 0)
+
+        texto = str(competencia).strip()
+        match_yyyy_mm = re.match(r"^(\d{4})-(\d{2})$", texto)
+        if match_yyyy_mm:
+            return (int(match_yyyy_mm.group(1)), int(match_yyyy_mm.group(2)))
+
+        match_mm_yy = re.match(r"^(\d{2})/(\d{2})$", texto)
+        if match_mm_yy:
+            return (2000 + int(match_mm_yy.group(2)), int(match_mm_yy.group(1)))
+
+        match_mm_yyyy = re.match(r"^(\d{2})/(\d{4})$", texto)
+        if match_mm_yyyy:
+            return (int(match_mm_yyyy.group(2)), int(match_mm_yyyy.group(1)))
+
+        return (0, 0)
+
+    def _calcular_status(self, df: pd.DataFrame) -> pd.Series:
+        maior_competencia = None
+        if not df.empty:
+            competencias_validas = [
+                c
+                for c in df["Competência"].dropna().tolist()
+                if self._competencia_para_ordem(c) != (0, 0)
+            ]
+            if competencias_validas:
+                maior_competencia = max(competencias_validas, key=self._competencia_para_ordem)
+
+        def status_linha(linha):
+            remuneracao_validada = str(linha["Remuneração"]).strip().lower() == "validado"
+            pagamento_texto = str(linha["Pagamento"]).strip().lower()
+            pagamento_validado = pagamento_texto == "validado"
+            pagamento_em_branco = pagamento_texto in {"", "nan", "none", "nat"}
+
+            if remuneracao_validada and pagamento_validado:
+                return "Validado"
+
+            if (
+                remuneracao_validada
+                and maior_competencia is not None
+                and linha["Competência"] == maior_competencia
+                and pagamento_em_branco
+            ):
+                return "Validado"
+
+            return "Invalidado"
+
+        return df.apply(status_linha, axis=1)
+
     def processar_bloco(self, inicio: int, fim: int, empresa: str, cnpj: str) -> pd.DataFrame:
         assert self.dados_raw is not None
 
@@ -133,15 +184,7 @@ class ProcessadorEventosPeriodicos:
         df.insert(0, "Empresa", empresa if empresa else "")
         df.insert(1, "CNPJ", cnpj if cnpj else "")
 
-        df["Status"] = df.apply(
-            lambda r: "Validado"
-            if (
-                str(r["Remuneração"]).strip().lower() == "validado"
-                and str(r["Pagamento"]).strip().lower() == "validado"
-            )
-            else "Invalidado",
-            axis=1,
-        )
+        df["Status"] = "Invalidado"
 
         return df
 
@@ -167,6 +210,7 @@ class ProcessadorEventosPeriodicos:
 
         if resultados:
             self.dados_consolidados = pd.concat(resultados, ignore_index=True)
+            self.dados_consolidados["Status"] = self._calcular_status(self.dados_consolidados)
             self.dados_consolidados = self.dados_consolidados.sort_values(
                 by=["Empresa", "Competência", "Nome"], na_position="last"
             ).reset_index(drop=True)
