@@ -6,6 +6,7 @@ Processa arquivos .xlsx com múltiplos blocos de empresas e gera relatório cons
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -146,10 +147,26 @@ class ProcessadorEventosPeriodicos:
 
         return df.apply(status_linha, axis=1)
 
-    def _normalizar_texto(self, valor) -> str:
+    def _normalizar_texto(self, valor, remover_prefixo_numerico: bool = False) -> str:
         if pd.isna(valor):
             return ""
-        return re.sub(r"\s+", " ", str(valor).strip().upper())
+
+        texto = str(valor).strip().upper()
+        if remover_prefixo_numerico:
+            texto = re.sub(r"^\d+\s*[-–—]?\s*", "", texto)
+
+        texto = unicodedata.normalize("NFKD", texto)
+        texto = "".join(ch for ch in texto if not unicodedata.combining(ch))
+        return re.sub(r"\s+", " ", texto)
+
+    def _normalizar_codigo(self, valor) -> str:
+        if pd.isna(valor):
+            return ""
+
+        codigo = str(valor).strip()
+        if re.fullmatch(r"\d+\.0", codigo):
+            codigo = codigo[:-2]
+        return codigo
 
     def marcar_afastados(self, df_afastados: pd.DataFrame):
         """
@@ -189,13 +206,17 @@ class ProcessadorEventosPeriodicos:
 
         afastados = df_afastados[[col_empresa, col_codigo, col_nome]].copy()
         afastados.columns = ["empresa", "codigo", "nome"]
-        afastados["empresa_key"] = afastados["empresa"].apply(self._normalizar_texto)
-        afastados["codigo_key"] = afastados["codigo"].astype(str).str.strip()
+        afastados["empresa_key"] = afastados["empresa"].apply(
+            lambda v: self._normalizar_texto(v, remover_prefixo_numerico=True)
+        )
+        afastados["codigo_key"] = afastados["codigo"].apply(self._normalizar_codigo)
         afastados["nome_key"] = afastados["nome"].apply(self._normalizar_texto)
 
         base = self.dados_consolidados.copy()
-        base["empresa_key"] = base["Empresa"].apply(self._normalizar_texto)
-        base["codigo_key"] = base["Código Empregado"].astype(str).str.strip()
+        base["empresa_key"] = base["Empresa"].apply(
+            lambda v: self._normalizar_texto(v, remover_prefixo_numerico=True)
+        )
+        base["codigo_key"] = base["Código Empregado"].apply(self._normalizar_codigo)
         base["nome_key"] = base["Nome"].apply(self._normalizar_texto)
 
         chaves_afastados = set(
