@@ -12,17 +12,31 @@ st.set_page_config(page_title="Consolidador eSocial", layout="wide")
 st.markdown(
     """
     <style>
+    :root {
+        --bg: #020817;
+        --panel: #0b1220;
+        --panel-2: #111827;
+        --border: rgba(148, 163, 184, 0.14);
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --primary: #3b82f6;
+        --primary-hover: #2563eb;
+        --shadow: 0 18px 50px rgba(0,0,0,0.35);
+    }
     .main {
-        background: #f1f5f9;
+        background:
+            radial-gradient(circle at top, rgba(59,130,246,0.14), transparent 28%),
+            linear-gradient(180deg, #030712 0%, #020817 100%);
+        color: var(--text);
     }
     .hero {
-        border: 1px solid #0f172a;
-        border-radius: 12px;
-        padding: 1rem 1.2rem;
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 1.2rem 1.35rem;
         margin-bottom: 1rem;
-        background: #0f172a;
-        color: #f8fafc;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.28);
+        background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(9,17,33,0.95));
+        color: var(--text);
+        box-shadow: var(--shadow);
     }
     .hero h1 {
         font-size: 1.35rem;
@@ -30,19 +44,19 @@ st.markdown(
     }
     .hero p {
         margin: 0;
-        opacity: 0.9;
+        color: var(--muted);
     }
     .section-card {
-        border: 1px solid #cbd5e1;
-        border-radius: 10px;
-        background: #ffffff;
-        color: #0f172a;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: linear-gradient(180deg, rgba(15,23,42,0.96), rgba(10,15,28,0.94));
+        color: var(--text);
         padding: 0.8rem 0.95rem 0.3rem 0.95rem;
         margin-bottom: 0.75rem;
-        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+        box-shadow: var(--shadow);
     }
     .section-card strong, .section-card em, .section-card span, .section-card p {
-        color: #0f172a !important;
+        color: var(--text) !important;
     }
     .hero-title {
         display: flex;
@@ -53,7 +67,7 @@ st.markdown(
         width: 22px;
         height: 22px;
         fill: none;
-        stroke: #93c5fd;
+        stroke: #bfdbfe;
         stroke-width: 2;
         stroke-linecap: round;
         stroke-linejoin: round;
@@ -64,42 +78,61 @@ st.markdown(
         align-items: center;
         gap: 0.4rem;
         font-weight: 600;
-        color: #0f172a;
+        color: var(--text);
     }
     .label-with-icon svg {
         width: 16px;
         height: 16px;
-        stroke: #0f172a;
+        stroke: #60a5fa;
         fill: none;
         stroke-width: 2;
         stroke-linecap: round;
         stroke-linejoin: round;
     }
+    .stFileUploader label, .stTextArea label {
+        color: var(--text) !important;
+        font-weight: 600;
+    }
+    .stFileUploader small, .stTextArea small {
+        color: var(--muted) !important;
+    }
     div[data-testid="stMetric"] {
-        border: 1px solid #cbd5e1;
-        background-color: #ffffff;
-        border-radius: 10px;
+        border: 1px solid var(--border);
+        background-color: rgba(255,255,255,0.03);
+        border-radius: 12px;
         padding: 0.55rem 0.7rem;
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.25);
     }
     div[data-testid="stMetricLabel"] p {
         font-weight: 600;
-        color: #334155;
+        color: var(--muted);
     }
     div[data-testid="stMetricValue"] {
-        color: #0f172a;
+        color: var(--text);
+    }
+    .stDataFrame {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
     }
     .stDownloadButton button {
         width: 100%;
-        border-radius: 8px;
+        border-radius: 12px;
         font-weight: 600;
-        background: #0f172a;
-        color: #f8fafc;
-        border: 1px solid #0f172a;
+        background: var(--primary);
+        color: #fff;
+        border: 1px solid var(--primary);
     }
     .stDownloadButton button:hover {
-        background: #020617;
-        border-color: #020617;
+        background: var(--primary-hover);
+        border-color: var(--primary-hover);
+    }
+    .stButton button {
+        border-radius: 12px;
+        font-weight: 700;
+    }
+    .stSuccess, .stWarning, .stInfo {
+        border-radius: 12px;
     }
     </style>
     """,
@@ -109,6 +142,11 @@ st.markdown(
 st.markdown(
     """
     <div class="hero">
+        <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+        <div style="max-width:760px;">
+            <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(96,165,250,0.22);background:rgba(59,130,246,0.08);color:#bfdbfe;font-size:12px;font-weight:600;margin-bottom:10px;">
+                Consolidação inteligente
+            </div>
         <h1 class="hero-title">
             <svg class="hero-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M3 3v18h18"></path>
@@ -121,6 +159,13 @@ st.markdown(
             Consolidador de Relatório de Status dos Eventos Periódicos
         </h1>
         <p>Envie a planilha, marque afastados e baixe o consolidado em Excel com poucos cliques.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(96px,1fr));gap:8px;min-width:280px;">
+            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Formato</span><strong>.XLSX</strong></div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Máx.</span><strong>200MB</strong></div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Status</span><strong>Pronto</strong></div>
+        </div>
+        </div>
     </div>
     """,
     unsafe_allow_html=True,
