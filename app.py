@@ -7,17 +7,207 @@ import streamlit as st
 
 from processador_eventos import ProcessadorEventosPeriodicos
 
-st.set_page_config(page_title="Consolidador eSocial", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Consolidador eSocial", layout="wide")
 
-st.title("📊 Consolidador de Relatório de Status dos Eventos Periódicos")
-st.caption("Faça upload da planilha .xlsx, processe os dados e baixe o consolidado.")
-
-uploaded_file = st.file_uploader("Selecione a planilha de entrada", type=["xlsx"])
-texto_afastados = st.text_area(
-    "Ou cole os afastados aqui (Ctrl+C / Ctrl+V) - opcional",
-    help="Cole linhas no formato: código empresa, nome empresa, código funcionário, nome funcionário.",
-    height=140,
+st.markdown(
+    """
+    <style>
+    :root {
+        --bg: #020817;
+        --panel: #0b1220;
+        --panel-2: #111827;
+        --border: rgba(148, 163, 184, 0.14);
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --primary: #3b82f6;
+        --primary-hover: #2563eb;
+        --shadow: 0 18px 50px rgba(0,0,0,0.35);
+    }
+    .main {
+        background:
+            radial-gradient(circle at top, rgba(59,130,246,0.14), transparent 28%),
+            linear-gradient(180deg, #030712 0%, #020817 100%);
+        color: var(--text);
+    }
+    .hero {
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 1.2rem 1.35rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(9,17,33,0.95));
+        color: var(--text);
+        box-shadow: var(--shadow);
+    }
+    .hero h1 {
+        font-size: 1.35rem;
+        margin: 0 0 0.35rem 0;
+    }
+    .hero p {
+        margin: 0;
+        color: var(--muted);
+    }
+    .section-card {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: linear-gradient(180deg, rgba(15,23,42,0.96), rgba(10,15,28,0.94));
+        color: var(--text);
+        padding: 0.8rem 0.95rem 0.3rem 0.95rem;
+        margin-bottom: 0.75rem;
+        box-shadow: var(--shadow);
+    }
+    .section-card strong, .section-card em, .section-card span, .section-card p {
+        color: var(--text) !important;
+    }
+    .hero-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .hero-icon {
+        width: 22px;
+        height: 22px;
+        fill: none;
+        stroke: #bfdbfe;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex-shrink: 0;
+    }
+    .label-with-icon {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-weight: 600;
+        color: var(--text);
+    }
+    .label-with-icon svg {
+        width: 16px;
+        height: 16px;
+        stroke: #60a5fa;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .stFileUploader label, .stTextArea label {
+        color: var(--text) !important;
+        font-weight: 600;
+    }
+    .stFileUploader small, .stTextArea small {
+        color: var(--muted) !important;
+    }
+    div[data-testid="stMetric"] {
+        border: 1px solid var(--border);
+        background-color: rgba(255,255,255,0.03);
+        border-radius: 12px;
+        padding: 0.55rem 0.7rem;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    }
+    div[data-testid="stMetricLabel"] p {
+        font-weight: 600;
+        color: var(--muted);
+    }
+    div[data-testid="stMetricValue"] {
+        color: var(--text);
+    }
+    .stDataFrame {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+    .stDownloadButton button {
+        width: 100%;
+        border-radius: 12px;
+        font-weight: 600;
+        background: var(--primary);
+        color: #fff;
+        border: 1px solid var(--primary);
+    }
+    .stDownloadButton button:hover {
+        background: var(--primary-hover);
+        border-color: var(--primary-hover);
+    }
+    .stButton button {
+        border-radius: 12px;
+        font-weight: 700;
+    }
+    .stSuccess, .stWarning, .stInfo {
+        border-radius: 12px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
+
+st.markdown(
+    """
+    <div class="hero">
+        <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+        <div style="max-width:760px;">
+            <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(96,165,250,0.22);background:rgba(59,130,246,0.08);color:#bfdbfe;font-size:12px;font-weight:600;margin-bottom:10px;">
+                Consolidação inteligente
+            </div>
+        <h1 class="hero-title">
+            <svg class="hero-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 3v18h18"></path>
+                <path d="M7 14l3-3 3 2 4-5"></path>
+                <circle cx="7" cy="14" r="1"></circle>
+                <circle cx="10" cy="11" r="1"></circle>
+                <circle cx="13" cy="13" r="1"></circle>
+                <circle cx="17" cy="8" r="1"></circle>
+            </svg>
+            Consolidador de Relatório de Status dos Eventos Periódicos
+        </h1>
+        <p>Envie a planilha, marque afastados e baixe o consolidado em Excel com poucos cliques.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(96px,1fr));gap:8px;min-width:280px;">
+            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Formato</span><strong>.XLSX</strong></div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Máx.</span><strong>200MB</strong></div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Status</span><strong>Pronto</strong></div>
+        </div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+col_upload, col_hint = st.columns([2.3, 1.2])
+with col_upload:
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <span class="label-with-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3v12"></path>
+                <path d="M8 7l4-4 4 4"></path>
+                <path d="M4 14v4a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-4"></path>
+            </svg>
+            Selecione a planilha de entrada
+        </span>
+        """,
+        unsafe_allow_html=True,
+    )
+    uploaded_file = st.file_uploader("Selecione a planilha de entrada", type=["xlsx"], label_visibility="collapsed")
+    st.markdown("</div>", unsafe_allow_html=True)
+with col_hint:
+    st.markdown(
+        """
+        <div class="section-card">
+            <strong>Dica rápida</strong><br/>
+            Para afastados, você pode colar dados com <em>TAB</em>, <em>;</em> ou <em>,</em>.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+st.markdown('<div class="section-card">', unsafe_allow_html=True)
+texto_afastados = st.text_area(
+    "Cole os afastados aqui (opcional)",
+    help="Formato sugerido: código empresa, nome empresa, código funcionário, nome funcionário.",
+    height=160,
+    placeholder="133\tIGREJA ASSEMBLEIA\t1\tMARIA PASTORINA DE OLIVEIRA",
+)
+st.markdown("</div>", unsafe_allow_html=True)
 
 
 def carregar_lista_afastados(texto):
@@ -64,7 +254,7 @@ if uploaded_file:
     st.success(f"Arquivo carregado: {uploaded_file.name}")
     df_preview_afastados = carregar_lista_afastados(texto_afastados)
 
-    st.subheader("Prévia dos afastados colados")
+    st.markdown("#### Prévia dos afastados colados")
     if df_preview_afastados is not None and not df_preview_afastados.empty:
         st.dataframe(df_preview_afastados, use_container_width=True)
     elif texto_afastados and texto_afastados.strip():
@@ -86,10 +276,11 @@ if uploaded_file:
             else:
                 stats = processador.calcular_estatisticas()
 
-                col1, col2, col3 = st.columns(3)
+                col1, col2, col3, col4 = st.columns(4)
                 col1.metric("Total de registros", stats["total_registros"])
                 col2.metric("Validados", stats["total_validados"])
                 col3.metric("Invalidados", stats["total_invalidados"])
+                col4.metric("Afastados", stats["total_afastados"])
 
                 st.dataframe(processador.dados_consolidados, use_container_width=True)
 
@@ -101,7 +292,7 @@ if uploaded_file:
                 nome_saida = f"relacao_eventos_periodicos_consolidado_{timestamp}.xlsx"
 
                 st.download_button(
-                    label="⬇️ Baixar consolidado em Excel",
+                    label="Baixar consolidado em Excel",
                     data=output,
                     file_name=nome_saida,
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
