@@ -13,32 +13,33 @@ st.markdown(
     """
     <style>
     .main {
-        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        background: #f1f5f9;
     }
     .hero {
-        border-radius: 16px;
-        padding: 1.2rem 1.4rem;
+        border: 1px solid #0f172a;
+        border-radius: 12px;
+        padding: 1rem 1.2rem;
         margin-bottom: 1rem;
-        background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 55%, #6d28d9 100%);
-        color: #ffffff;
-        box-shadow: 0 10px 20px rgba(30, 64, 175, 0.20);
+        background: #0f172a;
+        color: #f8fafc;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.28);
     }
     .hero h1 {
-        font-size: 1.45rem;
+        font-size: 1.35rem;
         margin: 0 0 0.35rem 0;
     }
     .hero p {
         margin: 0;
-        opacity: 0.95;
+        opacity: 0.9;
     }
     .section-card {
-        border: 1px solid #dbeafe;
-        border-radius: 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
         background: #ffffff;
         color: #0f172a;
-        padding: 0.85rem 1rem 0.3rem 1rem;
-        margin-bottom: 0.8rem;
-        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+        padding: 0.8rem 0.95rem 0.3rem 0.95rem;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
     }
     .section-card strong, .section-card em, .section-card span, .section-card p {
         color: #0f172a !important;
@@ -52,7 +53,7 @@ st.markdown(
         width: 22px;
         height: 22px;
         fill: none;
-        stroke: #ffffff;
+        stroke: #93c5fd;
         stroke-width: 2;
         stroke-linecap: round;
         stroke-linejoin: round;
@@ -68,23 +69,37 @@ st.markdown(
     .label-with-icon svg {
         width: 16px;
         height: 16px;
-        stroke: #1d4ed8;
+        stroke: #0f172a;
         fill: none;
         stroke-width: 2;
         stroke-linecap: round;
         stroke-linejoin: round;
     }
     div[data-testid="stMetric"] {
-        border: 1px solid #e2e8f0;
+        border: 1px solid #cbd5e1;
         background-color: #ffffff;
-        border-radius: 12px;
+        border-radius: 10px;
         padding: 0.55rem 0.7rem;
-        box-shadow: 0 1px 6px rgba(15, 23, 42, 0.06);
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    }
+    div[data-testid="stMetricLabel"] p {
+        font-weight: 600;
+        color: #334155;
+    }
+    div[data-testid="stMetricValue"] {
+        color: #0f172a;
     }
     .stDownloadButton button {
         width: 100%;
-        border-radius: 10px;
+        border-radius: 8px;
         font-weight: 600;
+        background: #0f172a;
+        color: #f8fafc;
+        border: 1px solid #0f172a;
+    }
+    .stDownloadButton button:hover {
+        background: #020617;
+        border-color: #020617;
     }
     </style>
     """,
