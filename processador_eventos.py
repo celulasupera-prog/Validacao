@@ -71,20 +71,35 @@ class ProcessadorEventosPeriodicos:
             ).any(axis=1)
         ].tolist()
 
-    def extrair_dados_empresa(self, inicio_bloco: int) -> Tuple[Optional[str], Optional[str]]:
+    def extrair_codigo_empresa(self, valor) -> Optional[str]:
+        if pd.isna(valor):
+            return None
+
+        texto = str(valor).strip()
+        match = re.match(r"^\s*(\d+)", texto)
+        if not match:
+            return None
+        return match.group(1)
+
+    def extrair_dados_empresa(
+        self, inicio_bloco: int
+    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
         assert self.dados_raw is not None
 
         empresa = None
         cnpj = None
+        codigo_empresa = None
         for idx in range(max(0, inicio_bloco - 10), inicio_bloco + 1):
             linha_texto = str(self.dados_raw.iloc[idx, 0])
 
             if "Empresa" in linha_texto:
-                empresa = self.limpar_nome_empresa(self.dados_raw.iloc[idx, 2])
+                empresa_raw = self.dados_raw.iloc[idx, 2]
+                empresa = self.limpar_nome_empresa(empresa_raw)
+                codigo_empresa = self.extrair_codigo_empresa(empresa_raw)
             if "CNPJ" in linha_texto:
                 cnpj = self.formatar_cnpj(self.dados_raw.iloc[idx, 2])
 
-        return empresa, cnpj
+        return empresa, cnpj, codigo_empresa
 
     def extrair_cabecalho(self, inicio_bloco: int, fim_bloco: int) -> Optional[int]:
         assert self.dados_raw is not None
@@ -179,12 +194,18 @@ class ProcessadorEventosPeriodicos:
         if self.dados_consolidados.empty or df_afastados.empty:
             return
 
-        mapa_colunas = {re.sub(r"\s+", "", c.lower()): c for c in df_afastados.columns}
+        normalizar_nome_coluna = lambda c: re.sub(r"[^a-z0-9]", "", str(c).lower())
+        mapa_colunas = {normalizar_nome_coluna(c): c for c in df_afastados.columns}
 
         col_empresa = (
             mapa_colunas.get("empresa")
             or mapa_colunas.get("nomeempresa")
             or mapa_colunas.get("razaosocial")
+        )
+        col_codigo_empresa = (
+            mapa_colunas.get("codigoempresa")
+            or mapa_colunas.get("codempresa")
+            or mapa_colunas.get("empresaid")
         )
         col_codigo = (
             mapa_colunas.get("codigofuncionario")
@@ -201,13 +222,38 @@ class ProcessadorEventosPeriodicos:
             or mapa_colunas.get("colaborador")
         )
 
-        if not (col_empresa and col_codigo and col_nome):
+        chave_por_codigo = bool(col_codigo_empresa and col_codigo)
+        chave_por_texto = bool(col_empresa and col_codigo and col_nome)
+        if not (chave_por_codigo or chave_por_texto):
             return
 
-        afastados = df_afastados[[col_empresa, col_codigo, col_nome]].copy()
-        afastados.columns = ["empresa", "codigo", "nome"]
+        colunas_base = [col_codigo]
+        if col_empresa:
+            colunas_base.append(col_empresa)
+        if col_nome:
+            colunas_base.append(col_nome)
+        if col_codigo_empresa:
+            colunas_base.append(col_codigo_empresa)
+
+        afastados = df_afastados[colunas_base].copy()
+        if col_empresa:
+            afastados["empresa"] = df_afastados[col_empresa]
+        else:
+            afastados["empresa"] = ""
+        if col_nome:
+            afastados["nome"] = df_afastados[col_nome]
+        else:
+            afastados["nome"] = ""
+        afastados["codigo"] = df_afastados[col_codigo]
+        if col_codigo_empresa:
+            afastados["codigo_empresa"] = df_afastados[col_codigo_empresa]
+        else:
+            afastados["codigo_empresa"] = ""
         afastados["empresa_key"] = afastados["empresa"].apply(
             lambda v: self._normalizar_texto(v, remover_prefixo_numerico=True)
+        )
+        afastados["codigo_empresa_key"] = afastados["codigo_empresa"].apply(
+            self._normalizar_codigo
         )
         afastados["codigo_key"] = afastados["codigo"].apply(self._normalizar_codigo)
         afastados["nome_key"] = afastados["nome"].apply(self._normalizar_texto)
@@ -216,19 +262,39 @@ class ProcessadorEventosPeriodicos:
         base["empresa_key"] = base["Empresa"].apply(
             lambda v: self._normalizar_texto(v, remover_prefixo_numerico=True)
         )
+        base["codigo_empresa_key"] = base["Código Empresa"].apply(self._normalizar_codigo)
         base["codigo_key"] = base["Código Empregado"].apply(self._normalizar_codigo)
         base["nome_key"] = base["Nome"].apply(self._normalizar_texto)
 
-        chaves_afastados = set(
-            afastados.apply(lambda r: (r["empresa_key"], r["codigo_key"], r["nome_key"]), axis=1).tolist()
-        )
-
-        mascara = base.apply(
-            lambda r: (r["empresa_key"], r["codigo_key"], r["nome_key"]) in chaves_afastados, axis=1
-        )
+        if col_codigo_empresa:
+            chaves_afastados = set(
+                afastados.apply(
+                    lambda r: (r["codigo_empresa_key"], r["codigo_key"]),
+                    axis=1,
+                ).tolist()
+            )
+            mascara = base.apply(
+                lambda r: (r["codigo_empresa_key"], r["codigo_key"])
+                in chaves_afastados,
+                axis=1,
+            )
+        else:
+            chaves_afastados = set(
+                afastados.apply(
+                    lambda r: (r["empresa_key"], r["codigo_key"], r["nome_key"]),
+                    axis=1,
+                ).tolist()
+            )
+            mascara = base.apply(
+                lambda r: (r["empresa_key"], r["codigo_key"], r["nome_key"])
+                in chaves_afastados,
+                axis=1,
+            )
         self.dados_consolidados.loc[mascara, "Status"] = "Afastado"
 
-    def processar_bloco(self, inicio: int, fim: int, empresa: str, cnpj: str) -> pd.DataFrame:
+    def processar_bloco(
+        self, inicio: int, fim: int, empresa: str, cnpj: str, codigo_empresa: str
+    ) -> pd.DataFrame:
         assert self.dados_raw is not None
 
         idx_cabecalho = self.extrair_cabecalho(inicio, fim)
@@ -264,7 +330,8 @@ class ProcessadorEventosPeriodicos:
         df["Competência"] = df["Competência"].apply(self.formatar_competencia)
 
         df.insert(0, "Empresa", empresa if empresa else "")
-        df.insert(1, "CNPJ", cnpj if cnpj else "")
+        df.insert(1, "Código Empresa", codigo_empresa if codigo_empresa else "")
+        df.insert(2, "CNPJ", cnpj if cnpj else "")
 
         df["Status"] = "Invalidado"
 
@@ -285,8 +352,10 @@ class ProcessadorEventosPeriodicos:
                 else len(self.dados_raw)
             )
 
-            empresa, cnpj = self.extrair_dados_empresa(inicio_bloco)
-            df_bloco = self.processar_bloco(inicio_bloco, fim_bloco, empresa, cnpj)
+            empresa, cnpj, codigo_empresa = self.extrair_dados_empresa(inicio_bloco)
+            df_bloco = self.processar_bloco(
+                inicio_bloco, fim_bloco, empresa, cnpj, codigo_empresa
+            )
             if not df_bloco.empty:
                 resultados.append(df_bloco)
 
