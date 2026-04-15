@@ -187,6 +187,7 @@ hero_container.markdown(
     unsafe_allow_html=True,
 )
 
+uploaded_file = None
 col_upload, col_hint = hero_container.columns([2.3, 1.2])
 with col_upload:
     st.markdown(
