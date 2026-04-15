@@ -205,8 +205,7 @@ with col_upload:
             """,
             unsafe_allow_html=True,
         )
-    uploaded_file = st.file_uploader(
-            "Selecione a planilha de entrada", type=["xlsx"], label_visibility="collapsed"
+    uploaded_file = st.file_uploader("Selecione a planilha de entrada", type=["xlsx"], label_visibility="collapsed"
         )
 with col_hint:
         st.markdown(
