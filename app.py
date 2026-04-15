@@ -190,9 +190,9 @@ def _renderizar_hero_upload() -> any:
     )
 st.markdown("</div>", unsafe_allow_html=True)
 
-    col_upload, col_hint = st.columns([2.3, 1.2])
-    with col_upload:
-        st.markdown(
+col_upload, col_hint = st.columns([2.3, 1.2])
+with col_upload:
+     st.markdown(
             """
             <span class="label-with-icon">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -208,7 +208,7 @@ st.markdown("</div>", unsafe_allow_html=True)
         uploaded_file = st.file_uploader(
             "Selecione a planilha de entrada", type=["xlsx"], label_visibility="collapsed"
         )
-    with col_hint:
+with col_hint:
         st.markdown(
             """
             <div class="hero-tip">
@@ -221,7 +221,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 
     arquivo = None
     col_upload, col_hint = hero_container.columns([2.3, 1.2])
-    with col_upload:
+with col_upload:
         st.markdown(
             """
             <span class="label-with-icon">
@@ -238,7 +238,7 @@ st.markdown("</div>", unsafe_allow_html=True)
         arquivo = st.file_uploader(
             "Selecione a planilha de entrada", type=["xlsx"], label_visibility="collapsed"
         )
-    with col_hint:
+with col_hint:
         st.markdown(
             """
             <div class="hero-tip">
@@ -248,7 +248,7 @@ st.markdown("</div>", unsafe_allow_html=True)
             """,
             unsafe_allow_html=True,
         )
-    return arquivo
+return arquivo
 
 
 uploaded_file = _renderizar_hero_upload()
