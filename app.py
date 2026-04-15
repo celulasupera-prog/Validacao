@@ -187,6 +187,7 @@ with st.container():
         """,
         unsafe_allow_html=True,
     )
+st.markdown("</div>", unsafe_allow_html=True)
 
     col_upload, col_hint = st.columns([2.3, 1.2])
     with col_upload:
