@@ -190,7 +190,11 @@ def _renderizar_hero_upload() -> any:
         <hr class="hero-divider"/>
         """,
         unsafe_allow_html=True,
-    )
+        )
+return arquivo
+
+
+uploaded_file = _renderizar_hero_upload()
 
     arquivo = None
     col_upload, col_hint = hero_container.columns([2.3, 1.2])
