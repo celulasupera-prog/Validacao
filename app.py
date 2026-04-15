@@ -229,7 +229,20 @@ if supabase_client:
 
 if grupos_disponiveis:
     nomes_grupos = [g["nome"] for g in grupos_disponiveis]
-    grupo_nome_selecionado = st.selectbox("Grupo", nomes_grupos, index=0)
+    col_grupo, col_grupo_hint = st.columns([1.2, 2.8])
+    with col_grupo:
+        grupo_nome_selecionado = st.selectbox("Grupo", nomes_grupos, index=0)
+    with col_grupo_hint:
+        st.markdown(
+            """
+            <div style="margin-top:1.9rem;color:#94a3b8;font-size:0.9rem;">
+                Selecione o grupo para carregar e editar os cadastros fixos de
+                <strong style="color:#cbd5e1;">Pro Labore</strong> e
+                <strong style="color:#cbd5e1;">Domésticas</strong>.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
     grupo_id_selecionado = next(
         (g["id"] for g in grupos_disponiveis if g["nome"] == grupo_nome_selecionado), None
     )
