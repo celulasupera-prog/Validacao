@@ -292,6 +292,111 @@ class ProcessadorEventosPeriodicos:
             )
         self.dados_consolidados.loc[mascara, "Status"] = "Afastado"
 
+    def marcar_por_lista(self, df_lista: pd.DataFrame, status: str):
+        """
+        Marca registros com um status customizado com base em lista externa.
+        A lista deve conter, no mínimo:
+          - código da empresa e código do empregado
+        ou:
+          - nome da empresa, código do empregado e nome do empregado
+        """
+        if self.dados_consolidados.empty or df_lista.empty:
+            return
+
+        normalizar_nome_coluna = lambda c: re.sub(r"[^a-z0-9]", "", str(c).lower())
+        mapa_colunas = {normalizar_nome_coluna(c): c for c in df_lista.columns}
+
+        col_empresa = (
+            mapa_colunas.get("empresa")
+            or mapa_colunas.get("nomeempresa")
+            or mapa_colunas.get("razaosocial")
+        )
+        col_codigo_empresa = (
+            mapa_colunas.get("codigoempresa")
+            or mapa_colunas.get("codempresa")
+            or mapa_colunas.get("empresaid")
+        )
+        col_codigo = (
+            mapa_colunas.get("codigofuncionario")
+            or mapa_colunas.get("codigoempregado")
+            or mapa_colunas.get("codigocolaborador")
+            or mapa_colunas.get("codigo")
+            or mapa_colunas.get("matricula")
+        )
+        col_nome = (
+            mapa_colunas.get("funcionario")
+            or mapa_colunas.get("nomefuncionario")
+            or mapa_colunas.get("nomeempregado")
+            or mapa_colunas.get("nome")
+            or mapa_colunas.get("colaborador")
+        )
+
+        chave_por_codigo = bool(col_codigo_empresa and col_codigo)
+        chave_por_texto = bool(col_empresa and col_codigo and col_nome)
+        if not (chave_por_codigo or chave_por_texto):
+            return
+
+        colunas_base = [col_codigo]
+        if col_empresa:
+            colunas_base.append(col_empresa)
+        if col_nome:
+            colunas_base.append(col_nome)
+        if col_codigo_empresa:
+            colunas_base.append(col_codigo_empresa)
+
+        lista = df_lista[colunas_base].copy()
+        if col_empresa:
+            lista["empresa"] = df_lista[col_empresa]
+        else:
+            lista["empresa"] = ""
+        if col_nome:
+            lista["nome"] = df_lista[col_nome]
+        else:
+            lista["nome"] = ""
+        lista["codigo"] = df_lista[col_codigo]
+        if col_codigo_empresa:
+            lista["codigo_empresa"] = df_lista[col_codigo_empresa]
+        else:
+            lista["codigo_empresa"] = ""
+        lista["empresa_key"] = lista["empresa"].apply(
+            lambda v: self._normalizar_texto(v, remover_prefixo_numerico=True)
+        )
+        lista["codigo_empresa_key"] = lista["codigo_empresa"].apply(self._normalizar_codigo)
+        lista["codigo_key"] = lista["codigo"].apply(self._normalizar_codigo)
+        lista["nome_key"] = lista["nome"].apply(self._normalizar_texto)
+
+        base = self.dados_consolidados.copy()
+        base["empresa_key"] = base["Empresa"].apply(
+            lambda v: self._normalizar_texto(v, remover_prefixo_numerico=True)
+        )
+        base["codigo_empresa_key"] = base["Código Empresa"].apply(self._normalizar_codigo)
+        base["codigo_key"] = base["Código Empregado"].apply(self._normalizar_codigo)
+        base["nome_key"] = base["Nome"].apply(self._normalizar_texto)
+
+        if col_codigo_empresa:
+            chaves = set(
+                lista.apply(
+                    lambda r: (r["codigo_empresa_key"], r["codigo_key"]),
+                    axis=1,
+                ).tolist()
+            )
+            mascara = base.apply(
+                lambda r: (r["codigo_empresa_key"], r["codigo_key"]) in chaves,
+                axis=1,
+            )
+        else:
+            chaves = set(
+                lista.apply(
+                    lambda r: (r["empresa_key"], r["codigo_key"], r["nome_key"]),
+                    axis=1,
+                ).tolist()
+            )
+            mascara = base.apply(
+                lambda r: (r["empresa_key"], r["codigo_key"], r["nome_key"]) in chaves,
+                axis=1,
+            )
+        self.dados_consolidados.loc[mascara, "Status"] = status
+
     def processar_bloco(
         self, inicio: int, fim: int, empresa: str, cnpj: str, codigo_empresa: str
     ) -> pd.DataFrame:
@@ -375,9 +480,13 @@ class ProcessadorEventosPeriodicos:
                 "total_validados": 0,
                 "total_invalidados": 0,
                 "total_afastados": 0,
+                "total_pro_labore": 0,
+                "total_domestica": 0,
                 "percentual_validados": 0,
                 "percentual_invalidados": 0,
                 "percentual_afastados": 0,
+                "percentual_pro_labore": 0,
+                "percentual_domestica": 0,
                 "total_empresas": 0,
                 "total_funcionarios": 0,
                 "competencias": [],
@@ -390,6 +499,8 @@ class ProcessadorEventosPeriodicos:
             "total_validados": int((df["Status"] == "Validado").sum()),
             "total_invalidados": int((df["Status"] == "Invalidado").sum()),
             "total_afastados": int((df["Status"] == "Afastado").sum()),
+            "total_pro_labore": int((df["Status"] == "Pro Labore").sum()),
+            "total_domestica": int((df["Status"] == "Doméstica").sum()),
             "percentual_validados": round(
                 (df["Status"] == "Validado").sum() / len(df) * 100, 2
             ),
@@ -398,6 +509,12 @@ class ProcessadorEventosPeriodicos:
             ),
             "percentual_afastados": round(
                 (df["Status"] == "Afastado").sum() / len(df) * 100, 2
+            ),
+            "percentual_pro_labore": round(
+                (df["Status"] == "Pro Labore").sum() / len(df) * 100, 2
+            ),
+            "percentual_domestica": round(
+                (df["Status"] == "Doméstica").sum() / len(df) * 100, 2
             ),
             "total_empresas": df["Empresa"].nunique(),
             "total_funcionarios": df["CPF"].nunique(),
@@ -415,6 +532,8 @@ class ProcessadorEventosPeriodicos:
                     "validados": int((df_emp["Status"] == "Validado").sum()),
                     "invalidados": int((df_emp["Status"] == "Invalidado").sum()),
                     "afastados": int((df_emp["Status"] == "Afastado").sum()),
+                    "pro_labore": int((df_emp["Status"] == "Pro Labore").sum()),
+                    "domestica": int((df_emp["Status"] == "Doméstica").sum()),
                     "percentual": round(
                         (df_emp["Status"] == "Validado").sum() / len(df_emp) * 100,
                         2,
@@ -459,6 +578,16 @@ class ProcessadorEventosPeriodicos:
                             start_color="FFEB9C", end_color="FFEB9C", fill_type="solid"
                         )
                         cell.font = Font(color="9C6500", bold=True)
+                    elif value == "Pro Labore":
+                        cell.fill = PatternFill(
+                            start_color="D9E1F2", end_color="D9E1F2", fill_type="solid"
+                        )
+                        cell.font = Font(color="1F4E78", bold=True)
+                    elif value == "Doméstica":
+                        cell.fill = PatternFill(
+                            start_color="FCE4D6", end_color="FCE4D6", fill_type="solid"
+                        )
+                        cell.font = Font(color="7F4126", bold=True)
                     cell.alignment = Alignment(horizontal="center")
 
                 cell.border = Border(
@@ -524,6 +653,22 @@ class ProcessadorEventosPeriodicos:
             start_color="FFEB9C", end_color="FFEB9C", fill_type="solid"
         )
 
+        linha += 1
+        ws_stats[f"A{linha}"] = "Pro Labore:"
+        ws_stats[f"B{linha}"] = stats["total_pro_labore"]
+        ws_stats[f"C{linha}"] = f"{stats['percentual_pro_labore']}%"
+        ws_stats[f"B{linha}"].fill = PatternFill(
+            start_color="D9E1F2", end_color="D9E1F2", fill_type="solid"
+        )
+
+        linha += 1
+        ws_stats[f"A{linha}"] = "Doméstica:"
+        ws_stats[f"B{linha}"] = stats["total_domestica"]
+        ws_stats[f"C{linha}"] = f"{stats['percentual_domestica']}%"
+        ws_stats[f"B{linha}"].fill = PatternFill(
+            start_color="FCE4D6", end_color="FCE4D6", fill_type="solid"
+        )
+
         linha += 2
         ws_stats[f"A{linha}"] = "Total de Empresas:"
         ws_stats[f"B{linha}"] = stats["total_empresas"]
@@ -547,6 +692,8 @@ class ProcessadorEventosPeriodicos:
             "Validados",
             "Invalidados",
             "Afastados",
+            "Pro Labore",
+            "Doméstica",
             "% Validados",
         ]
         for col, titulo in enumerate(cabecalho, 1):
@@ -565,7 +712,9 @@ class ProcessadorEventosPeriodicos:
             ws_stats[f"D{linha}"] = emp["validados"]
             ws_stats[f"E{linha}"] = emp["invalidados"]
             ws_stats[f"F{linha}"] = emp["afastados"]
-            ws_stats[f"G{linha}"] = f"{emp['percentual']}%"
+            ws_stats[f"G{linha}"] = emp["pro_labore"]
+            ws_stats[f"H{linha}"] = emp["domestica"]
+            ws_stats[f"I{linha}"] = f"{emp['percentual']}%"
 
         ws_stats.column_dimensions["A"].width = 40
         ws_stats.column_dimensions["B"].width = 20
@@ -574,5 +723,7 @@ class ProcessadorEventosPeriodicos:
         ws_stats.column_dimensions["E"].width = 12
         ws_stats.column_dimensions["F"].width = 15
         ws_stats.column_dimensions["G"].width = 15
+        ws_stats.column_dimensions["H"].width = 15
+        ws_stats.column_dimensions["I"].width = 15
 
         wb.save(destino_saida)

@@ -209,6 +209,27 @@ texto_afastados = st.text_area(
 )
 st.markdown("</div>", unsafe_allow_html=True)
 
+col_status_1, col_status_2 = st.columns(2)
+with col_status_1:
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    texto_pro_labore = st.text_area(
+        "Cole os Pro labores aqui (opcional)",
+        help="Formato sugerido: código empresa, nome empresa, código empregado, nome do sócio.",
+        height=160,
+        placeholder="133\tIGREJA ASSEMBLEIA\t999\tJOÃO DA SILVA",
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with col_status_2:
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    texto_domesticas = st.text_area(
+        "Cole as domésticas aqui (opcional)",
+        help="Formato sugerido: código empresa, nome empresa, código empregado, nome da doméstica.",
+        height=160,
+        placeholder="133\tIGREJA ASSEMBLEIA\t888\tMARIA APARECIDA",
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
 def carregar_lista_afastados(texto):
     if texto and texto.strip():
@@ -253,6 +274,8 @@ def carregar_lista_afastados(texto):
 if uploaded_file:
     st.success(f"Arquivo carregado: {uploaded_file.name}")
     df_preview_afastados = carregar_lista_afastados(texto_afastados)
+    df_preview_pro_labore = carregar_lista_afastados(texto_pro_labore)
+    df_preview_domesticas = carregar_lista_afastados(texto_domesticas)
 
     st.markdown("#### Prévia dos afastados colados")
     if df_preview_afastados is not None and not df_preview_afastados.empty:
@@ -262,6 +285,22 @@ if uploaded_file:
     else:
         st.info("Cole os dados de afastados para visualizar a prévia antes do processamento.")
 
+    st.markdown("#### Prévia dos pro labores colados")
+    if df_preview_pro_labore is not None and not df_preview_pro_labore.empty:
+        st.dataframe(df_preview_pro_labore, use_container_width=True)
+    elif texto_pro_labore and texto_pro_labore.strip():
+        st.warning("Não foi possível interpretar os pro labores. Verifique o formato das linhas coladas.")
+    else:
+        st.info("Cole os dados de pro labore para visualizar a prévia antes do processamento.")
+
+    st.markdown("#### Prévia das domésticas coladas")
+    if df_preview_domesticas is not None and not df_preview_domesticas.empty:
+        st.dataframe(df_preview_domesticas, use_container_width=True)
+    elif texto_domesticas and texto_domesticas.strip():
+        st.warning("Não foi possível interpretar as domésticas. Verifique o formato das linhas coladas.")
+    else:
+        st.info("Cole os dados de domésticas para visualizar a prévia antes do processamento.")
+
     if st.button("Processar planilha", type="primary"):
         with st.spinner("Processando dados..."):
             processador = ProcessadorEventosPeriodicos(uploaded_file)
@@ -270,17 +309,25 @@ if uploaded_file:
             df_afastados = carregar_lista_afastados(texto_afastados)
             if df_afastados is not None:
                 processador.marcar_afastados(df_afastados)
+            df_pro_labore = carregar_lista_afastados(texto_pro_labore)
+            if df_pro_labore is not None:
+                processador.marcar_por_lista(df_pro_labore, "Pro Labore")
+            df_domesticas = carregar_lista_afastados(texto_domesticas)
+            if df_domesticas is not None:
+                processador.marcar_por_lista(df_domesticas, "Doméstica")
 
             if processador.dados_consolidados.empty:
                 st.warning("Nenhum dado foi identificado para consolidação.")
             else:
                 stats = processador.calcular_estatisticas()
 
-                col1, col2, col3, col4 = st.columns(4)
+                col1, col2, col3, col4, col5, col6 = st.columns(6)
                 col1.metric("Total de registros", stats["total_registros"])
                 col2.metric("Validados", stats["total_validados"])
                 col3.metric("Invalidados", stats["total_invalidados"])
                 col4.metric("Afastados", stats["total_afastados"])
+                col5.metric("Pro Labore", stats["total_pro_labore"])
+                col6.metric("Doméstica", stats["total_domestica"])
 
                 st.dataframe(processador.dados_consolidados, use_container_width=True)
 
