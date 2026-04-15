@@ -31,7 +31,7 @@ st.markdown(
             linear-gradient(180deg, #030712 0%, #020817 100%);
         color: var(--text);
     }
-    .hero {
+    div[data-testid="stVerticalBlock"]:has(.hero-shell-anchor) {
         border: 1px solid var(--border);
         border-radius: 22px;
         padding: 1.2rem 1.35rem;
@@ -40,13 +40,25 @@ st.markdown(
         color: var(--text);
         box-shadow: var(--shadow);
     }
-    .hero h1 {
+    .hero-head h1 {
         font-size: 1.35rem;
         margin: 0 0 0.35rem 0;
     }
-    .hero p {
+    .hero-head p {
         margin: 0;
         color: var(--muted);
+    }
+    .hero-divider {
+        margin: 1rem 0 0.85rem 0;
+        border: 0;
+        border-top: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .hero-tip {
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.55);
+        padding: 0.7rem 0.8rem;
+        height: 100%;
     }
     .section-card {
         border: 1px solid var(--border);
@@ -140,10 +152,11 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-st.markdown(
+hero_container = st.container()
+hero_container.markdown('<div class="hero-shell-anchor"></div>', unsafe_allow_html=True)
+hero_container.markdown(
     """
-    <div class="hero">
+    <div class="hero-head">
         <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;">
         <div style="max-width:760px;">
             <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(96,165,250,0.22);background:rgba(59,130,246,0.08);color:#bfdbfe;font-size:12px;font-weight:600;margin-bottom:10px;">
@@ -169,13 +182,14 @@ st.markdown(
         </div>
         </div>
     </div>
+    <hr class="hero-divider"/>
     """,
     unsafe_allow_html=True,
 )
 
-col_upload, col_hint = st.columns([2.3, 1.2])
+uploaded_file = None
+col_upload, col_hint = hero_container.columns([2.3, 1.2])
 with col_upload:
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.markdown(
         """
         <span class="label-with-icon">
@@ -189,12 +203,15 @@ with col_upload:
         """,
         unsafe_allow_html=True,
     )
-    uploaded_file = st.file_uploader("Selecione a planilha de entrada", type=["xlsx"], label_visibility="collapsed")
-    st.markdown("</div>", unsafe_allow_html=True)
+    uploaded_file = st.file_uploader(
+        "Selecione a planilha de entrada",
+        type=["xlsx"],
+        label_visibility="collapsed",
+    )
 with col_hint:
     st.markdown(
         """
-        <div class="section-card">
+        <div class="hero-tip">
             <strong>Dica rápida</strong><br/>
             Para afastados, você pode colar dados com <em>TAB</em>, <em>;</em> ou <em>,</em>.
         </div>
@@ -223,7 +240,9 @@ grupos_disponiveis = []
 grupo_id_selecionado = None
 if supabase_client:
     try:
-        grupos_disponiveis = [g for g in supabase_client.get_groups() if g.get("ativo", True)]
+        grupos_disponiveis = [
+            g for g in supabase_client.get_groups() if g.get("ativo", True)
+        ]
     except SupabaseError as exc:
         st.error(f"Erro ao carregar grupos do Supabase: {exc}")
 
@@ -244,7 +263,8 @@ if grupos_disponiveis:
             unsafe_allow_html=True,
         )
     grupo_id_selecionado = next(
-        (g["id"] for g in grupos_disponiveis if g["nome"] == grupo_nome_selecionado), None
+        (g["id"] for g in grupos_disponiveis if g["nome"] == grupo_nome_selecionado),
+        None,
     )
 else:
     st.warning("Nenhum grupo ativo encontrado no Supabase.")
@@ -276,9 +296,7 @@ def _renderizar_crud_grupo(nome_tabela: str, titulo: str, grupo_id: int):
         base_df["ativo"] = True
 
     coluna_nome = (
-        "Nome do sócio"
-        if nome_tabela == "pro_labore"
-        else "Nome da doméstica"
+        "Nome do sócio" if nome_tabela == "pro_labore" else "Nome da doméstica"
     )
     visual_df = base_df.rename(columns={"nome_empregado": coluna_nome})
     edited_df = st.data_editor(
@@ -321,27 +339,6 @@ texto_afastados = st.text_area(
 )
 st.markdown("</div>", unsafe_allow_html=True)
 
-col_status_1, col_status_2 = st.columns(2)
-with col_status_1:
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    texto_pro_labore = st.text_area(
-        "Cole os Pro labores aqui (opcional)",
-        help="Formato sugerido: código empresa, nome empresa, código empregado, nome do sócio.",
-        height=160,
-        placeholder="133\tIGREJA ASSEMBLEIA\t999\tJOÃO DA SILVA",
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-with col_status_2:
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    texto_domesticas = st.text_area(
-        "Cole as domésticas aqui (opcional)",
-        help="Formato sugerido: código empresa, nome empresa, código empregado, nome da doméstica.",
-        height=160,
-        placeholder="133\tIGREJA ASSEMBLEIA\t888\tMARIA APARECIDA",
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
 
 def carregar_lista_afastados(texto):
     if texto and texto.strip():
@@ -362,7 +359,9 @@ def carregar_lista_afastados(texto):
                 else:
                     # Exemplo aceito: 133 IGREJA ASSEMBLEIA 1 MARIA PASTORINA
                     match = re.match(r"^\s*(\d+)\s+(.+?)\s+(\d+)\s+(.+)\s*$", linha)
-                    partes = list(match.groups()) if match else re.split(r"\s{2,}", linha)
+                    partes = (
+                        list(match.groups()) if match else re.split(r"\s{2,}", linha)
+                    )
 
                 partes = [p for p in partes if str(p).strip()]
                 if len(partes) >= 4:
@@ -383,6 +382,7 @@ def carregar_lista_afastados(texto):
             return df_texto
     return None
 
+
 if uploaded_file:
     st.success(f"Arquivo carregado: {uploaded_file.name}")
     df_preview_afastados = carregar_lista_afastados(texto_afastados)
@@ -401,17 +401,21 @@ if uploaded_file:
     if df_preview_afastados is not None and not df_preview_afastados.empty:
         st.dataframe(df_preview_afastados, use_container_width=True)
     elif texto_afastados and texto_afastados.strip():
-        st.warning("Não foi possível interpretar os afastados. Verifique o formato das linhas coladas.")
+        st.warning(
+            "Não foi possível interpretar os afastados. Verifique o formato das linhas coladas."
+        )
     else:
-        st.info("Cole os dados de afastados para visualizar a prévia antes do processamento.")
+        st.info(
+            "Cole os dados de afastados para visualizar a prévia antes do processamento."
+        )
 
-    st.markdown("#### Prévia dos pro labores colados")
+    st.markdown("#### Prévia dos cadastros de Pro Labore do grupo")
     if df_preview_pro_labore is not None and not df_preview_pro_labore.empty:
         st.dataframe(df_preview_pro_labore, use_container_width=True)
     else:
         st.info("Nenhum cadastro de pro labore encontrado para o grupo selecionado.")
 
-    st.markdown("#### Prévia das domésticas coladas")
+    st.markdown("#### Prévia dos cadastros de Domésticas do grupo")
     if df_preview_domesticas is not None and not df_preview_domesticas.empty:
         st.dataframe(df_preview_domesticas, use_container_width=True)
     else:
