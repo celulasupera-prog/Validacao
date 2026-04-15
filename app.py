@@ -152,9 +152,7 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-hero_container = st.container()
-hero_container.markdown('<div class="hero-shell-anchor"></div>', unsafe_allow_html=True)
-hero_container.markdown(
+st.markdown(
     """
     <div class="hero-head">
         <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;">
@@ -188,7 +186,7 @@ hero_container.markdown(
 )
 
 uploaded_file = None
-col_upload, col_hint = hero_container.columns([2.3, 1.2])
+col_upload, col_hint = st.columns([2.3, 1.2])
 with col_upload:
     st.markdown(
         """
@@ -208,6 +206,7 @@ with col_upload:
         type=["xlsx"],
         label_visibility="collapsed",
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 with col_hint:
     st.markdown(
         """
