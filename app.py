@@ -321,6 +321,27 @@ texto_afastados = st.text_area(
 )
 st.markdown("</div>", unsafe_allow_html=True)
 
+col_status_1, col_status_2 = st.columns(2)
+with col_status_1:
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    texto_pro_labore = st.text_area(
+        "Cole os Pro labores aqui (opcional)",
+        help="Formato sugerido: código empresa, nome empresa, código empregado, nome do sócio.",
+        height=160,
+        placeholder="133\tIGREJA ASSEMBLEIA\t999\tJOÃO DA SILVA",
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with col_status_2:
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    texto_domesticas = st.text_area(
+        "Cole as domésticas aqui (opcional)",
+        help="Formato sugerido: código empresa, nome empresa, código empregado, nome da doméstica.",
+        height=160,
+        placeholder="133\tIGREJA ASSEMBLEIA\t888\tMARIA APARECIDA",
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
 def carregar_lista_afastados(texto):
     if texto and texto.strip():
