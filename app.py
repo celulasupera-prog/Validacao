@@ -205,7 +205,7 @@ with col_upload:
             """,
             unsafe_allow_html=True,
         )
-        uploaded_file = st.file_uploader(
+    uploaded_file = st.file_uploader(
             "Selecione a planilha de entrada", type=["xlsx"], label_visibility="collapsed"
         )
 with col_hint:
@@ -216,7 +216,7 @@ with col_hint:
                 Para afastados, você pode colar dados com <em>TAB</em>, <em>;</em> ou <em>,</em>.
             </div>
             """,
-            unsafe_allow_html=True,
+        unsafe_allow_html=True,
         )
 
     arquivo = None
@@ -233,7 +233,7 @@ with col_upload:
                 Selecione a planilha de entrada
             </span>
             """,
-            unsafe_allow_html=True,
+         unsafe_allow_html=True,
         )
         arquivo = st.file_uploader(
             "Selecione a planilha de entrada", type=["xlsx"], label_visibility="collapsed"
@@ -246,7 +246,7 @@ with col_hint:
                 Para afastados, você pode colar dados com <em>TAB</em>, <em>;</em> ou <em>,</em>.
             </div>
             """,
-            unsafe_allow_html=True,
+        unsafe_allow_html=True,
         )
 return arquivo
 
