@@ -153,9 +153,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+
 def _renderizar_hero_upload() -> any:
     hero_container = st.container()
-    hero_container.markdown('<div class="hero-shell-anchor"></div>', unsafe_allow_html=True)
+    hero_container.markdown(
+        '<div class="hero-shell-anchor"></div>', unsafe_allow_html=True
+    )
     hero_container.markdown(
         """
         <div class="hero-head">
@@ -187,12 +190,16 @@ def _renderizar_hero_upload() -> any:
         <hr class="hero-divider"/>
         """,
         unsafe_allow_html=True,
-    )
-st.markdown("</div>", unsafe_allow_html=True)
+        )
+return arquivo
 
-col_upload, col_hint = st.columns([2.3, 1.2])
-with col_upload:
-     st.markdown(
+
+uploaded_file = _renderizar_hero_upload()
+
+    arquivo = None
+    col_upload, col_hint = hero_container.columns([2.3, 1.2])
+    with col_upload:
+        st.markdown(
             """
             <span class="label-with-icon">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -205,39 +212,12 @@ with col_upload:
             """,
             unsafe_allow_html=True,
         )
-    uploaded_file = st.file_uploader("Selecione a planilha de entrada", type=["xlsx"], label_visibility="collapsed"
-        )
-with col_hint:
-        st.markdown(
-            """
-            <div class="hero-tip">
-                <strong>Dica rápida</strong><br/>
-                Para afastados, você pode colar dados com <em>TAB</em>, <em>;</em> ou <em>,</em>.
-            </div>
-            """,
-        unsafe_allow_html=True,
-        )
-
-    arquivo = None
-    col_upload, col_hint = hero_container.columns([2.3, 1.2])
-with col_upload:
-        st.markdown(
-            """
-            <span class="label-with-icon">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 3v12"></path>
-                    <path d="M8 7l4-4 4 4"></path>
-                    <path d="M4 14v4a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-4"></path>
-                </svg>
-                Selecione a planilha de entrada
-            </span>
-            """,
-         unsafe_allow_html=True,
-        )
         arquivo = st.file_uploader(
-            "Selecione a planilha de entrada", type=["xlsx"], label_visibility="collapsed"
+            "Selecione a planilha de entrada",
+            type=["xlsx"],
+            label_visibility="collapsed",
         )
-with col_hint:
+    with col_hint:
         st.markdown(
             """
             <div class="hero-tip">
@@ -245,9 +225,9 @@ with col_hint:
                 Para afastados, você pode colar dados com <em>TAB</em>, <em>;</em> ou <em>,</em>.
             </div>
             """,
-        unsafe_allow_html=True,
+            unsafe_allow_html=True,
         )
-return arquivo
+    return arquivo
 
 
 uploaded_file = _renderizar_hero_upload()
@@ -273,7 +253,9 @@ grupos_disponiveis = []
 grupo_id_selecionado = None
 if supabase_client:
     try:
-        grupos_disponiveis = [g for g in supabase_client.get_groups() if g.get("ativo", True)]
+        grupos_disponiveis = [
+            g for g in supabase_client.get_groups() if g.get("ativo", True)
+        ]
     except SupabaseError as exc:
         st.error(f"Erro ao carregar grupos do Supabase: {exc}")
 
@@ -294,7 +276,8 @@ if grupos_disponiveis:
             unsafe_allow_html=True,
         )
     grupo_id_selecionado = next(
-        (g["id"] for g in grupos_disponiveis if g["nome"] == grupo_nome_selecionado), None
+        (g["id"] for g in grupos_disponiveis if g["nome"] == grupo_nome_selecionado),
+        None,
     )
 else:
     st.warning("Nenhum grupo ativo encontrado no Supabase.")
@@ -326,9 +309,7 @@ def _renderizar_crud_grupo(nome_tabela: str, titulo: str, grupo_id: int):
         base_df["ativo"] = True
 
     coluna_nome = (
-        "Nome do sócio"
-        if nome_tabela == "pro_labore"
-        else "Nome da doméstica"
+        "Nome do sócio" if nome_tabela == "pro_labore" else "Nome da doméstica"
     )
     visual_df = base_df.rename(columns={"nome_empregado": coluna_nome})
     edited_df = st.data_editor(
@@ -371,6 +352,7 @@ texto_afastados = st.text_area(
 )
 st.markdown("</div>", unsafe_allow_html=True)
 
+
 def carregar_lista_afastados(texto):
     if texto and texto.strip():
         linhas = [l for l in texto.splitlines() if l.strip()]
@@ -390,7 +372,9 @@ def carregar_lista_afastados(texto):
                 else:
                     # Exemplo aceito: 133 IGREJA ASSEMBLEIA 1 MARIA PASTORINA
                     match = re.match(r"^\s*(\d+)\s+(.+?)\s+(\d+)\s+(.+)\s*$", linha)
-                    partes = list(match.groups()) if match else re.split(r"\s{2,}", linha)
+                    partes = (
+                        list(match.groups()) if match else re.split(r"\s{2,}", linha)
+                    )
 
                 partes = [p for p in partes if str(p).strip()]
                 if len(partes) >= 4:
@@ -411,6 +395,7 @@ def carregar_lista_afastados(texto):
             return df_texto
     return None
 
+
 if uploaded_file:
     st.success(f"Arquivo carregado: {uploaded_file.name}")
     df_preview_afastados = carregar_lista_afastados(texto_afastados)
@@ -429,9 +414,13 @@ if uploaded_file:
     if df_preview_afastados is not None and not df_preview_afastados.empty:
         st.dataframe(df_preview_afastados, use_container_width=True)
     elif texto_afastados and texto_afastados.strip():
-        st.warning("Não foi possível interpretar os afastados. Verifique o formato das linhas coladas.")
+        st.warning(
+            "Não foi possível interpretar os afastados. Verifique o formato das linhas coladas."
+        )
     else:
-        st.info("Cole os dados de afastados para visualizar a prévia antes do processamento.")
+        st.info(
+            "Cole os dados de afastados para visualizar a prévia antes do processamento."
+        )
 
     st.markdown("#### Prévia dos cadastros de Pro Labore do grupo")
     if df_preview_pro_labore is not None and not df_preview_pro_labore.empty:
