@@ -31,7 +31,7 @@ st.markdown(
             linear-gradient(180deg, #030712 0%, #020817 100%);
         color: var(--text);
     }
-    .hero {
+    div[data-testid="stVerticalBlock"]:has(.hero-shell-anchor) {
         border: 1px solid var(--border);
         border-radius: 22px;
         padding: 1.2rem 1.35rem;
@@ -40,11 +40,11 @@ st.markdown(
         color: var(--text);
         box-shadow: var(--shadow);
     }
-    .hero h1 {
+    .hero-head h1 {
         font-size: 1.35rem;
         margin: 0 0 0.35rem 0;
     }
-    .hero p {
+    .hero-head p {
         margin: 0;
         color: var(--muted);
     }
@@ -153,65 +153,70 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.markdown(
-    """
-    <div class="hero">
-        <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;">
-        <div style="max-width:760px;">
-            <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(96,165,250,0.22);background:rgba(59,130,246,0.08);color:#bfdbfe;font-size:12px;font-weight:600;margin-bottom:10px;">
-                Consolidação inteligente
+with st.container():
+    st.markdown('<div class="hero-shell-anchor"></div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="hero-head">
+            <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+            <div style="max-width:760px;">
+                <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(96,165,250,0.22);background:rgba(59,130,246,0.08);color:#bfdbfe;font-size:12px;font-weight:600;margin-bottom:10px;">
+                    Consolidação inteligente
+                </div>
+            <h1 class="hero-title">
+                <svg class="hero-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 3v18h18"></path>
+                    <path d="M7 14l3-3 3 2 4-5"></path>
+                    <circle cx="7" cy="14" r="1"></circle>
+                    <circle cx="10" cy="11" r="1"></circle>
+                    <circle cx="13" cy="13" r="1"></circle>
+                    <circle cx="17" cy="8" r="1"></circle>
+                </svg>
+                Consolidador de Relatório de Status dos Eventos Periódicos
+            </h1>
+            <p>Envie a planilha, marque afastados e baixe o consolidado em Excel com poucos cliques.</p>
             </div>
-        <h1 class="hero-title">
-            <svg class="hero-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 3v18h18"></path>
-                <path d="M7 14l3-3 3 2 4-5"></path>
-                <circle cx="7" cy="14" r="1"></circle>
-                <circle cx="10" cy="11" r="1"></circle>
-                <circle cx="13" cy="13" r="1"></circle>
-                <circle cx="17" cy="8" r="1"></circle>
-            </svg>
-            Consolidador de Relatório de Status dos Eventos Periódicos
-        </h1>
-        <p>Envie a planilha, marque afastados e baixe o consolidado em Excel com poucos cliques.</p>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,minmax(96px,1fr));gap:8px;min-width:280px;">
-            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Formato</span><strong>.XLSX</strong></div>
-            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Máx.</span><strong>200MB</strong></div>
-            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Status</span><strong>Pronto</strong></div>
-        </div>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(96px,1fr));gap:8px;min-width:280px;">
+                <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Formato</span><strong>.XLSX</strong></div>
+                <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Máx.</span><strong>200MB</strong></div>
+                <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Status</span><strong>Pronto</strong></div>
+            </div>
+            </div>
         </div>
         <hr class="hero-divider"/>
-    """,
-    unsafe_allow_html=True,
-)
-
-col_upload, col_hint = st.columns([2.3, 1.2])
-with col_upload:
-    st.markdown(
-        """
-        <span class="label-with-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 3v12"></path>
-                <path d="M8 7l4-4 4 4"></path>
-                <path d="M4 14v4a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-4"></path>
-            </svg>
-            Selecione a planilha de entrada
-        </span>
-        """,
-        unsafe_allow_html=True,
-    )
-    uploaded_file = st.file_uploader("Selecione a planilha de entrada", type=["xlsx"], label_visibility="collapsed")
-with col_hint:
-    st.markdown(
-        """
-        <div class="hero-tip">
-            <strong>Dica rápida</strong><br/>
-            Para afastados, você pode colar dados com <em>TAB</em>, <em>;</em> ou <em>,</em>.
-        </div>
         """,
         unsafe_allow_html=True,
     )
 st.markdown("</div>", unsafe_allow_html=True)
+
+    col_upload, col_hint = st.columns([2.3, 1.2])
+    with col_upload:
+        st.markdown(
+            """
+            <span class="label-with-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3v12"></path>
+                    <path d="M8 7l4-4 4 4"></path>
+                    <path d="M4 14v4a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-4"></path>
+                </svg>
+                Selecione a planilha de entrada
+            </span>
+            """,
+            unsafe_allow_html=True,
+        )
+        uploaded_file = st.file_uploader(
+            "Selecione a planilha de entrada", type=["xlsx"], label_visibility="collapsed"
+        )
+    with col_hint:
+        st.markdown(
+            """
+            <div class="hero-tip">
+                <strong>Dica rápida</strong><br/>
+                Para afastados, você pode colar dados com <em>TAB</em>, <em>;</em> ou <em>,</em>.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 supabase_url = st.secrets.get("SUPABASE_URL") or os.getenv("SUPABASE_URL")
 supabase_key = st.secrets.get("SUPABASE_SERVICE_ROLE_KEY") or os.getenv(
