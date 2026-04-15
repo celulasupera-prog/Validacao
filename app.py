@@ -1,4 +1,5 @@
 import io
+import os
 import re
 from datetime import datetime
 
@@ -6,6 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from processador_eventos import ProcessadorEventosPeriodicos
+from supabase_client import SupabaseError, SupabaseRestClient
 
 st.set_page_config(page_title="Consolidador eSocial", layout="wide")
 
@@ -200,6 +202,103 @@ with col_hint:
         unsafe_allow_html=True,
     )
 
+supabase_url = st.secrets.get("SUPABASE_URL") or os.getenv("SUPABASE_URL")
+supabase_key = st.secrets.get("SUPABASE_SERVICE_ROLE_KEY") or os.getenv(
+    "SUPABASE_SERVICE_ROLE_KEY"
+)
+supabase_client = None
+if supabase_url and supabase_key:
+    try:
+        supabase_client = SupabaseRestClient(supabase_url, supabase_key)
+        supabase_client.ensure_default_groups(["Supera", "Nova Era"])
+    except SupabaseError as exc:
+        st.warning(f"Não foi possível conectar ao Supabase: {exc}")
+else:
+    st.info(
+        "Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY em secrets/env para habilitar "
+        "cadastros persistentes por grupo."
+    )
+
+grupos_disponiveis = []
+grupo_id_selecionado = None
+if supabase_client:
+    try:
+        grupos_disponiveis = [g for g in supabase_client.get_groups() if g.get("ativo", True)]
+    except SupabaseError as exc:
+        st.error(f"Erro ao carregar grupos do Supabase: {exc}")
+
+if grupos_disponiveis:
+    nomes_grupos = [g["nome"] for g in grupos_disponiveis]
+    grupo_nome_selecionado = st.selectbox("Grupo", nomes_grupos, index=0)
+    grupo_id_selecionado = next(
+        (g["id"] for g in grupos_disponiveis if g["nome"] == grupo_nome_selecionado), None
+    )
+else:
+    st.warning("Nenhum grupo ativo encontrado no Supabase.")
+
+
+def _carregar_registros_grupo(nome_tabela: str, grupo_id: int) -> pd.DataFrame:
+    if not supabase_client or not grupo_id:
+        return pd.DataFrame()
+
+    registros = supabase_client.get_group_records(nome_tabela, grupo_id)
+    if not registros:
+        return pd.DataFrame(
+            columns=[
+                "id",
+                "codigo_empresa",
+                "nome_empresa",
+                "codigo_empregado",
+                "nome_empregado",
+                "ativo",
+            ]
+        )
+    return pd.DataFrame(registros)
+
+
+def _renderizar_crud_grupo(nome_tabela: str, titulo: str, grupo_id: int):
+    st.markdown(f"#### {titulo}")
+    base_df = _carregar_registros_grupo(nome_tabela, grupo_id)
+    if "ativo" not in base_df.columns:
+        base_df["ativo"] = True
+
+    coluna_nome = (
+        "Nome do sócio"
+        if nome_tabela == "pro_labore"
+        else "Nome da doméstica"
+    )
+    visual_df = base_df.rename(columns={"nome_empregado": coluna_nome})
+    edited_df = st.data_editor(
+        visual_df,
+        use_container_width=True,
+        num_rows="dynamic",
+        key=f"editor_{nome_tabela}_{grupo_id}",
+        column_config={
+            "id": st.column_config.NumberColumn("ID", disabled=True),
+            "codigo_empresa": st.column_config.TextColumn("Código empresa"),
+            "nome_empresa": st.column_config.TextColumn("Nome empresa"),
+            "codigo_empregado": st.column_config.TextColumn("Código empregado"),
+            coluna_nome: st.column_config.TextColumn(coluna_nome),
+            "ativo": st.column_config.CheckboxColumn("Ativo"),
+        },
+    ).rename(columns={coluna_nome: "nome_empregado"})
+
+    if st.button(f"Salvar {titulo}", key=f"btn_salvar_{nome_tabela}_{grupo_id}"):
+        try:
+            supabase_client.sync_group_records(
+                nome_tabela, grupo_id, edited_df.to_dict("records")
+            )
+            st.success(f"{titulo} salvo com sucesso para o grupo selecionado.")
+            st.rerun()
+        except SupabaseError as exc:
+            st.error(f"Erro ao salvar {titulo}: {exc}")
+
+
+if supabase_client and grupo_id_selecionado:
+    with st.expander("Gerenciar cadastros fixos do grupo (CRUD)", expanded=False):
+        _renderizar_crud_grupo("pro_labore", "Pro Labore", grupo_id_selecionado)
+        _renderizar_crud_grupo("domesticas", "Domésticas", grupo_id_selecionado)
+
 st.markdown('<div class="section-card">', unsafe_allow_html=True)
 texto_afastados = st.text_area(
     "Cole os afastados aqui (opcional)",
@@ -274,8 +373,16 @@ def carregar_lista_afastados(texto):
 if uploaded_file:
     st.success(f"Arquivo carregado: {uploaded_file.name}")
     df_preview_afastados = carregar_lista_afastados(texto_afastados)
-    df_preview_pro_labore = carregar_lista_afastados(texto_pro_labore)
-    df_preview_domesticas = carregar_lista_afastados(texto_domesticas)
+    df_preview_pro_labore = (
+        _carregar_registros_grupo("pro_labore", grupo_id_selecionado)
+        if grupo_id_selecionado
+        else pd.DataFrame()
+    )
+    df_preview_domesticas = (
+        _carregar_registros_grupo("domesticas", grupo_id_selecionado)
+        if grupo_id_selecionado
+        else pd.DataFrame()
+    )
 
     st.markdown("#### Prévia dos afastados colados")
     if df_preview_afastados is not None and not df_preview_afastados.empty:
@@ -288,18 +395,14 @@ if uploaded_file:
     st.markdown("#### Prévia dos pro labores colados")
     if df_preview_pro_labore is not None and not df_preview_pro_labore.empty:
         st.dataframe(df_preview_pro_labore, use_container_width=True)
-    elif texto_pro_labore and texto_pro_labore.strip():
-        st.warning("Não foi possível interpretar os pro labores. Verifique o formato das linhas coladas.")
     else:
-        st.info("Cole os dados de pro labore para visualizar a prévia antes do processamento.")
+        st.info("Nenhum cadastro de pro labore encontrado para o grupo selecionado.")
 
     st.markdown("#### Prévia das domésticas coladas")
     if df_preview_domesticas is not None and not df_preview_domesticas.empty:
         st.dataframe(df_preview_domesticas, use_container_width=True)
-    elif texto_domesticas and texto_domesticas.strip():
-        st.warning("Não foi possível interpretar as domésticas. Verifique o formato das linhas coladas.")
     else:
-        st.info("Cole os dados de domésticas para visualizar a prévia antes do processamento.")
+        st.info("Nenhum cadastro de domésticas encontrado para o grupo selecionado.")
 
     if st.button("Processar planilha", type="primary"):
         with st.spinner("Processando dados..."):
@@ -309,10 +412,10 @@ if uploaded_file:
             df_afastados = carregar_lista_afastados(texto_afastados)
             if df_afastados is not None:
                 processador.marcar_afastados(df_afastados)
-            df_pro_labore = carregar_lista_afastados(texto_pro_labore)
+            df_pro_labore = df_preview_pro_labore
             if df_pro_labore is not None:
                 processador.marcar_por_lista(df_pro_labore, "Pro Labore")
-            df_domesticas = carregar_lista_afastados(texto_domesticas)
+            df_domesticas = df_preview_domesticas
             if df_domesticas is not None:
                 processador.marcar_por_lista(df_domesticas, "Doméstica")
 
