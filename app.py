@@ -14,78 +14,210 @@ st.set_page_config(page_title="Consolidador eSocial", layout="wide")
 st.markdown(
     """
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Syne:wght@600;700;800&display=swap');
     :root {
-        --bg: #020817;
-        --panel: #0b1220;
-        --panel-2: #111827;
-        --border: rgba(148, 163, 184, 0.14);
-        --text: #f8fafc;
-        --muted: #94a3b8;
-        --primary: #3b82f6;
-        --primary-hover: #2563eb;
-        --shadow: 0 18px 50px rgba(0,0,0,0.35);
+        --bg: #080808;
+        --panel: #111111;
+        --panel-2: #181818;
+        --border: rgba(255, 255, 255, 0.07);
+        --border-hover: rgba(255, 255, 255, 0.18);
+        --text: #f0f0f0;
+        --muted: #888888;
+        --cyan: #00e5ff;
+        --purple: #c77dff;
+        --lime: #c8ff5d;
+        --primary: #00e5ff;
+        --primary-hover: #29ebff;
+        --shadow: 0 20px 50px rgba(0,0,0,0.55);
+        --hero-title-size: clamp(1.7rem, 3.8vw, 3rem);
+    }
+    html, body, [class*="css"]  {
+        font-family: "DM Sans", sans-serif;
+        scroll-behavior: smooth;
     }
     .main {
+        position: relative;
+        overflow: hidden;
+        font-family: "DM Sans", sans-serif;
         background:
-            radial-gradient(circle at top, rgba(59,130,246,0.14), transparent 28%),
-            linear-gradient(180deg, #030712 0%, #020817 100%);
+            radial-gradient(circle at 16% 6%, rgba(0,229,255,0.1), transparent 26%),
+            radial-gradient(circle at 84% 85%, rgba(199,125,255,0.1), transparent 28%),
+            linear-gradient(180deg, #0a0a0a 0%, #080808 100%);
         color: var(--text);
     }
+    .main::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.04;
+        z-index: 0;
+        background-image:
+            radial-gradient(circle at 20% 20%, rgba(255,255,255,0.8) 1px, transparent 1px),
+            radial-gradient(circle at 80% 75%, rgba(255,255,255,0.65) 1px, transparent 1px);
+        background-size: 3px 3px, 4px 4px;
+    }
+    .bg-blob {
+        position: fixed;
+        filter: blur(120px);
+        opacity: 0.12;
+        z-index: 0;
+        pointer-events: none;
+        border-radius: 999px;
+    }
+    .blob-cyan { width: 600px; height: 600px; top: -230px; left: -180px; background: var(--cyan); }
+    .blob-pink { width: 500px; height: 500px; right: -160px; bottom: -220px; background: var(--purple); }
+    .blob-lime { width: 400px; height: 400px; left: 50%; top: 38%; transform: translate(-50%, -50%); background: var(--lime); }
     div[data-testid="stVerticalBlock"]:has(.hero-shell-anchor) {
         border: 1px solid var(--border);
-        border-radius: 22px;
-        padding: 1.2rem 1.35rem;
+        border-radius: 24px;
+        padding: 1.2rem 1.35rem 1.35rem;
         margin-bottom: 1rem;
-        background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(9,17,33,0.95));
+        background: linear-gradient(135deg, rgba(17,17,17,0.95), rgba(24,24,24,0.94));
         color: var(--text);
+        backdrop-filter: blur(14px);
         box-shadow: var(--shadow);
+        position: relative;
+        z-index: 1;
     }
     .hero-head h1 {
-        font-size: 1.35rem;
+        font-family: "Syne", sans-serif;
+        font-size: var(--hero-title-size) !important;
+        letter-spacing: -0.03em;
+        line-height: 0.98;
         margin: 0 0 0.35rem 0;
+        font-weight: 800;
     }
     .hero-head p {
-        margin: 0;
+        margin: 0 0 0.75rem;
         color: var(--muted);
+        max-width: 56ch;
+        font-size: 1.05rem;
     }
     .hero-divider {
-        margin: 1rem 0 0.85rem 0;
+        margin: 1rem 0 0.5rem 0;
         border: 0;
-        border-top: 1px solid rgba(148, 163, 184, 0.2);
+        border-top: 1px solid var(--border);
     }
     .hero-tip {
-        border: 1px solid rgba(148, 163, 184, 0.18);
-        border-radius: 12px;
-        background: rgba(15, 23, 42, 0.55);
-        padding: 0.7rem 0.8rem;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: linear-gradient(180deg, #121212, #181818);
+        padding: 0.9rem;
         height: 100%;
     }
     .section-card {
         border: 1px solid var(--border);
-        border-radius: 16px;
-        background: linear-gradient(180deg, rgba(15,23,42,0.96), rgba(10,15,28,0.94));
+        border-radius: 20px;
+        background: linear-gradient(180deg, #121212, #171717);
         color: var(--text);
         padding: 0.8rem 0.95rem 0.3rem 0.95rem;
         margin-bottom: 0.75rem;
         box-shadow: var(--shadow);
+        transition: transform .3s ease, border-color .3s ease;
+    }
+    .section-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--border-hover);
     }
     .section-card strong, .section-card em, .section-card span, .section-card p {
         color: var(--text) !important;
     }
     .hero-title {
         display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.3rem;
     }
     .hero-icon {
-        width: 22px;
-        height: 22px;
+        width: 26px;
+        height: 26px;
         fill: none;
-        stroke: #bfdbfe;
+        stroke: var(--cyan);
         stroke-width: 2;
         stroke-linecap: round;
         stroke-linejoin: round;
         flex-shrink: 0;
+        filter: drop-shadow(0 0 14px rgba(0,229,255,0.45));
+    }
+    .hero-highlight {
+        background: linear-gradient(90deg, var(--cyan) 0%, #ff6ad5 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    .hero-badge {
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        padding:7px 12px;
+        border-radius:999px;
+        border:1px solid rgba(200,255,93,0.5);
+        background:rgba(200,255,93,0.08);
+        color:#ddff92;
+        font-size:12px;
+        font-family:"Syne",sans-serif;
+        font-weight:600;
+        letter-spacing:0.12em;
+        text-transform:uppercase;
+        margin-bottom:14px;
+    }
+    .fade-up {
+        opacity: 0;
+        transform: translateY(16px);
+        animation: fadeUp .75s ease forwards;
+    }
+    .delay-1 { animation-delay: .08s; }
+    .delay-2 { animation-delay: .18s; }
+    .delay-3 { animation-delay: .28s; }
+    .delay-4 { animation-delay: .38s; }
+    @keyframes fadeUp {
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .feature-grid {
+        display:grid;
+        grid-template-columns:repeat(3,minmax(160px,1fr));
+        gap:12px;
+        min-width:300px;
+    }
+    .feature-card {
+        border:1px solid var(--border);
+        border-radius:20px;
+        background:#121212;
+        transition:transform .3s ease,border-color .3s ease;
+        overflow:hidden;
+    }
+    .feature-card:hover {
+        transform:translateY(-4px);
+        border-color:var(--border-hover);
+    }
+    .feature-preview {
+        height:88px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:2rem;
+        position:relative;
+        background: radial-gradient(circle at 50% 45%, rgba(255,255,255,0.12) 0%, transparent 58%);
+    }
+    .feature-preview::before{
+        content:"";
+        position:absolute;
+        width:74px;
+        height:74px;
+        border-radius:999px;
+        filter:blur(22px);
+        opacity:.38;
+    }
+    .preview-cyan::before{ background:var(--cyan);}
+    .preview-purple::before{ background:var(--purple);}
+    .preview-lime::before{ background:var(--lime);}
+    .feature-body{ padding:10px 12px 12px; }
+    .feature-body span { display:block;color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase; }
+    .feature-body strong { font-family:"Syne",sans-serif;font-size:1rem;color:var(--text); }
+    .label-with-icon {
+        font-family: "Syne", sans-serif;
+        letter-spacing: .02em;
     }
     .label-with-icon {
         display: inline-flex;
@@ -131,10 +263,10 @@ st.markdown(
     }
     .stDownloadButton button {
         width: 100%;
-        border-radius: 12px;
-        font-weight: 600;
+        border-radius: 14px;
+        font-weight: 700;
         background: var(--primary);
-        color: #fff;
+        color: #001318;
         border: 1px solid var(--primary);
     }
     .stDownloadButton button:hover {
@@ -142,8 +274,18 @@ st.markdown(
         border-color: var(--primary-hover);
     }
     .stButton button {
-        border-radius: 12px;
+        border-radius: 14px;
         font-weight: 700;
+        border: 1px solid var(--border);
+        transition: all .3s ease;
+    }
+    .stButton button:hover {
+        border-color: var(--border-hover);
+        transform: translateY(-2px);
+    }
+    @media (max-width: 600px) {
+        .feature-grid { grid-template-columns:1fr; }
+        .hero-head p { font-size: .95rem; }
     }
     .stSuccess, .stWarning, .stInfo {
         border-radius: 12px;
@@ -154,13 +296,15 @@ st.markdown(
 )
 st.markdown(
     """
+    <div class="bg-blob blob-cyan"></div>
+    <div class="bg-blob blob-pink"></div>
+    <div class="bg-blob blob-lime"></div>
+    <div class="hero-shell-anchor"></div>
     <div class="hero-head">
         <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;">
         <div style="max-width:760px;">
-            <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(96,165,250,0.22);background:rgba(59,130,246,0.08);color:#bfdbfe;font-size:12px;font-weight:600;margin-bottom:10px;">
-                Consolidação inteligente
-            </div>
-        <h1 class="hero-title">
+            <div class="hero-badge fade-up">Consolidação inteligente</div>
+        <h1 class="hero-title fade-up delay-1">
             <svg class="hero-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M3 3v18h18"></path>
                 <path d="M7 14l3-3 3 2 4-5"></path>
@@ -169,14 +313,24 @@ st.markdown(
                 <circle cx="13" cy="13" r="1"></circle>
                 <circle cx="17" cy="8" r="1"></circle>
             </svg>
-            Consolidador de Relatório de Status dos Eventos Periódicos
+            <span>Consolidador de Relatório de Status</span>
+            <span class="hero-highlight">dos Eventos Periódicos</span>
         </h1>
-        <p>Envie a planilha, marque afastados e baixe o consolidado em Excel com poucos cliques.</p>
+        <p class="fade-up delay-2">Envie a planilha, marque afastados e baixe o consolidado em Excel com poucos cliques.</p>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(3,minmax(96px,1fr));gap:8px;min-width:280px;">
-            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Formato</span><strong>.XLSX</strong></div>
-            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Máx.</span><strong>200MB</strong></div>
-            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:10px;border-radius:12px;"><span style="display:block;color:var(--muted);font-size:11px;">Status</span><strong>Pronto</strong></div>
+        <div class="feature-grid">
+            <div class="feature-card fade-up delay-2">
+                <div class="feature-preview preview-cyan">📄</div>
+                <div class="feature-body"><span>Formato ↗</span><strong>.XLSX</strong></div>
+            </div>
+            <div class="feature-card fade-up delay-3">
+                <div class="feature-preview preview-purple">⚡</div>
+                <div class="feature-body"><span>Tamanho ↗</span><strong>200MB</strong></div>
+            </div>
+            <div class="feature-card fade-up delay-4">
+                <div class="feature-preview preview-lime">🟢</div>
+                <div class="feature-body"><span>Status ↗</span><strong>Pronto</strong></div>
+            </div>
         </div>
         </div>
     </div>
