@@ -366,7 +366,7 @@ with col_hint:
         """
         <div class="hero-tip">
             <strong>Dica rápida</strong><br/>
-            Para afastados, você pode colar dados com <em>TAB</em>, <em>;</em> ou <em>,</em>.
+            Para afastados, você pode colar dados com <em>TAB</em> <em>;</em> ou <em>,</em>.
         </div>
         <hr class="hero-divider"/>
         """,
