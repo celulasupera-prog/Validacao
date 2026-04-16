@@ -480,7 +480,7 @@ def _renderizar_crud_grupo(nome_tabela: str, titulo: str, grupo_id: int):
 
 
 if supabase_client and grupo_id_selecionado:
-    with st.expander("Gerenciar cadastros fixos do grupo (CRUD)", expanded=False):
+    with st.expander("Gerenciar cadastros fixos do grupo", expanded=False):
         _renderizar_crud_grupo("pro_labore", "Pro Labore", grupo_id_selecionado)
         _renderizar_crud_grupo("domesticas", "Domésticas", grupo_id_selecionado)
 
@@ -489,7 +489,7 @@ texto_afastados = st.text_area(
     "Cole os afastados aqui (opcional)",
     help="Formato sugerido: código empresa, nome empresa, código funcionário, nome funcionário.",
     height=160,
-    placeholder="133\tIGREJA ASSEMBLEIA\t1\tMARIA PASTORINA DE OLIVEIRA",
+    placeholder="001\tEMPRESA EXEMPLO\t01\tFULANINHO DE TAL",
 )
 st.markdown("</div>", unsafe_allow_html=True)
 
