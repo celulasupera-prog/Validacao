@@ -218,46 +218,6 @@ with col_hint:
         """,
         unsafe_allow_html=True,
         )
-return arquivo
-
-
-uploaded_file = _renderizar_hero_upload()
-
-    arquivo = None
-    col_upload, col_hint = hero_container.columns([2.3, 1.2])
-    with col_upload:
-        st.markdown(
-            """
-            <span class="label-with-icon">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 3v12"></path>
-                    <path d="M8 7l4-4 4 4"></path>
-                    <path d="M4 14v4a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-4"></path>
-                </svg>
-                Selecione a planilha de entrada
-            </span>
-            """,
-            unsafe_allow_html=True,
-        )
-        arquivo = st.file_uploader(
-            "Selecione a planilha de entrada",
-            type=["xlsx"],
-            label_visibility="collapsed",
-        )
-    with col_hint:
-        st.markdown(
-            """
-            <div class="hero-tip">
-                <strong>Dica rápida</strong><br/>
-                Para afastados, você pode colar dados com <em>TAB</em>, <em>;</em> ou <em>,</em>.
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    return arquivo
-
-
-uploaded_file = _renderizar_hero_upload()
 
 supabase_url = st.secrets.get("SUPABASE_URL") or os.getenv("SUPABASE_URL")
 supabase_key = st.secrets.get("SUPABASE_SERVICE_ROLE_KEY") or os.getenv(
