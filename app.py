@@ -424,13 +424,27 @@ else:
     st.warning("Nenhum grupo ativo encontrado no Supabase.")
 
 
+def _cache_key_registros(nome_tabela: str, grupo_id: int) -> str:
+    return f"{nome_tabela}:{grupo_id}"
+
+
+def _invalidar_cache_registros(nome_tabela: str, grupo_id: int):
+    cache = st.session_state.setdefault("cache_registros_grupo", {})
+    cache.pop(_cache_key_registros(nome_tabela, grupo_id), None)
+
+
 def _carregar_registros_grupo(nome_tabela: str, grupo_id: int) -> pd.DataFrame:
     if not supabase_client or not grupo_id:
         return pd.DataFrame()
 
+    cache = st.session_state.setdefault("cache_registros_grupo", {})
+    chave = _cache_key_registros(nome_tabela, grupo_id)
+    if chave in cache:
+        return cache[chave].copy()
+
     registros = supabase_client.get_group_records(nome_tabela, grupo_id)
     if not registros:
-        return pd.DataFrame(
+        vazio = pd.DataFrame(
             columns=[
                 "id",
                 "codigo_empresa",
@@ -440,7 +454,12 @@ def _carregar_registros_grupo(nome_tabela: str, grupo_id: int) -> pd.DataFrame:
                 "ativo",
             ]
         )
-    return pd.DataFrame(registros)
+        cache[chave] = vazio
+        return vazio.copy()
+
+    df = pd.DataFrame(registros)
+    cache[chave] = df
+    return df.copy()
 
 
 def _renderizar_crud_grupo(nome_tabela: str, titulo: str, grupo_id: int):
@@ -473,6 +492,7 @@ def _renderizar_crud_grupo(nome_tabela: str, titulo: str, grupo_id: int):
             supabase_client.sync_group_records(
                 nome_tabela, grupo_id, edited_df.to_dict("records")
             )
+            _invalidar_cache_registros(nome_tabela, grupo_id)
             st.success(f"{titulo} salvo com sucesso para o grupo selecionado.")
             st.rerun()
         except SupabaseError as exc:
