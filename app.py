@@ -29,6 +29,7 @@ st.markdown(
         --primary: #00e5ff;
         --primary-hover: #29ebff;
         --shadow: 0 20px 50px rgba(0,0,0,0.55);
+        --hero-title-size: clamp(1.7rem, 3.8vw, 3rem);
     }
     html, body, [class*="css"]  {
         font-family: "DM Sans", sans-serif;
@@ -81,11 +82,11 @@ st.markdown(
     }
     .hero-head h1 {
         font-family: "Syne", sans-serif;
-        font-size: clamp(2.75rem, 7.3vw, 5.2rem);
+        font-size: var(--hero-title-size) !important;
         letter-spacing: -0.03em;
         line-height: 0.98;
         margin: 0 0 0.35rem 0;
-        font-weight: 10;
+        font-weight: 800;
     }
     .hero-head p {
         margin: 0 0 0.75rem;
