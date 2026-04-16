@@ -85,7 +85,7 @@ st.markdown(
         letter-spacing: -0.03em;
         line-height: 0.98;
         margin: 0 0 0.35rem 0;
-        font-weight: 30;
+        font-weight: 10;
     }
     .hero-head p {
         margin: 0 0 0.75rem;
